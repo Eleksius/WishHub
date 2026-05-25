@@ -13,6 +13,8 @@ db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
+# Список доступных эмодзи для аватарок
+EMOJIS = ['🎁', '🍕', '🐱', '🎮', '🏀', '🚀', '⭐', '🦖', '🍿', '💡', '🍩', '🦊', '🥑', '🎸']
 
 # --- МОДЕЛИ БАЗЫ ДАННЫХ ---
 class User(UserMixin, db.Model):
@@ -22,6 +24,7 @@ class User(UserMixin, db.Model):
     name = db.Column(db.String(50), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
     birthday = db.Column(db.Date, nullable=True)
+    emoji = db.Column(db.String(10), default='🎁')  # Добавили поле для эмодзи
     wishes = db.relationship('WishItem', backref='owner', lazy=True, foreign_keys='WishItem.user_id')
 
 
@@ -57,7 +60,6 @@ def get_upcoming_events():
                 bday_this_year = date(today.year + 1, user.birthday.month, user.birthday.day)
                 delta = (bday_this_year - today).days
             if 0 <= delta <= 30:
-                # ПРАВКА 1: Убрали слово "близкого"
                 events.append({
                     'text': f"День рождения у человека: {user.name}",
                     'date': bday_this_year.strftime('%d.%m'),
@@ -130,7 +132,7 @@ def my_wishlist():
         return redirect(url_for('my_wishlist'))
 
     wishes = WishItem.query.filter_by(user_id=current_user.id).all()
-    return render_template('my_wishlist.html', wishes=wishes)
+    return render_template('my_wishlist.html', wishes=wishes, emojis=EMOJIS)
 
 
 @app.route('/update_profile', methods=['POST'])
@@ -140,6 +142,7 @@ def update_profile():
     new_name = request.form['name'].strip()
     new_birthday = request.form['birthday']
     new_password = request.form['password'].strip()
+    new_emoji = request.form.get('emoji', '🎁')
 
     existing_user = User.query.filter_by(username=new_username).first()
     if existing_user and existing_user.id != current_user.id:
@@ -148,6 +151,7 @@ def update_profile():
 
     current_user.username = new_username
     current_user.name = new_name
+    current_user.emoji = new_emoji
 
     if new_birthday:
         current_user.birthday = datetime.strptime(new_birthday, '%Y-%m-%d').date()
@@ -162,7 +166,6 @@ def update_profile():
     return redirect(url_for('my_wishlist'))
 
 
-# ПРАВКА 2: Создание пользователей админом прямо с сайта
 @app.route('/create_user', methods=['POST'])
 @login_required
 def create_user():
@@ -175,6 +178,7 @@ def create_user():
     password = request.form['password'].strip()
     birthday_str = request.form['birthday']
     is_admin = 'is_admin' in request.form
+    emoji = request.form.get('emoji', '🎁')
 
     if User.query.filter_by(username=username).first():
         flash('Пользователь с таким логином уже существует!', 'danger')
@@ -187,7 +191,8 @@ def create_user():
         name=name,
         password_hash=generate_password_hash(password),
         birthday=birthday,
-        is_admin=is_admin
+        is_admin=is_admin,
+        emoji=emoji
     )
     db.session.add(new_user)
     db.session.commit()

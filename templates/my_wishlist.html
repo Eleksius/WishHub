@@ -2,28 +2,58 @@
 {% block content %}
 <div class="row">
     <div class="col-md-4 mb-4">
-        <div class="card-modern p-3 mb-4">
-            <div class="card-body">
-                <h5 class="fw-bold mb-4 text-primary"><i class="bi bi-sliders me-2"></i> Настройки профиля</h5>
-                <form action="{{ url_for('update_profile') }}" method="POST">
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-muted">Имя на сайте</label>
-                        <input type="text" name="name" class="form-control form-control-modern" value="{{ current_user.name }}" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-muted">Логин (username)</label>
-                        <input type="text" name="username" class="form-control form-control-modern" value="{{ current_user.username }}" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-muted">Дата рождения</label>
-                        <input type="date" name="birthday" class="form-control form-control-modern" value="{{ current_user.birthday.strftime('%Y-%m-%d') if current_user.birthday else '' }}">
-                    </div>
-                    <div class="mb-4">
-                        <label class="form-label small fw-semibold text-muted">Новый пароль (оставь пустым)</label>
-                        <input type="password" name="password" class="form-control form-control-modern" placeholder="••••••••">
-                    </div>
-                    <button type="submit" class="btn btn-outline-primary btn-modern w-100">Сохранить изменения</button>
-                </form>
+
+        <div class="card-modern p-4 mb-4 text-center bg-white">
+            <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center mb-3" style="width: 85px; height: 85px; font-size: 2.5rem; shadow-sm">
+                {{ current_user.emoji }}
+            </div>
+            <h4 class="fw-bold mb-1">{{ current_user.name }}</h4>
+            <p class="text-muted small mb-3">@{{ current_user.username }}</p>
+            {% if current_user.birthday %}
+                <p class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill mb-3" style="font-weight: 500;">
+                    <i class="bi bi-calendar-heart me-1"></i> {{ current_user.birthday.strftime('%d.%m.%Y') }}
+                </p>
+            {% endif %}
+            <button class="btn btn-outline-primary btn-modern w-100 shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#editProfileForm">
+                <i class="bi bi-pencil-square me-1"></i> Редактировать профиль
+            </button>
+        </div>
+
+        <div class="collapse mb-4" id="editProfileForm">
+            <div class="card-modern p-3 border-start border-primary border-4 shadow-sm">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-4 text-primary"><i class="bi bi-sliders me-2"></i> Настройки профиля</h5>
+                    <form action="{{ url_for('update_profile') }}" method="POST">
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-muted">Выберите аватарку (эмодзи)</label>
+                            <div class="d-flex flex-wrap gap-2 p-2 bg-light rounded-3 justify-content-center">
+                                {% for e in emojis %}
+                                <input type="radio" class="btn-check" name="emoji" id="emoji_{{ loop.index }}" value="{{ e }}" {% if current_user.emoji == e %}checked{% endif %}>
+                                <label class="btn btn-outline-light text-dark border border-2 rounded-circle d-flex align-items-center justify-content-center p-0 emoji-label" for="emoji_{{ loop.index }}" style="width: 38px; height: 38px; font-size: 1.4rem; background: white;">
+                                    {{ e }}
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-muted">Имя на сайте</label>
+                            <input type="text" name="name" class="form-control form-control-modern" value="{{ current_user.name }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-muted">Логин (username)</label>
+                            <input type="text" name="username" class="form-control form-control-modern" value="{{ current_user.username }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-muted">Дата рождения</label>
+                            <input type="date" name="birthday" class="form-control form-control-modern" value="{{ current_user.birthday.strftime('%Y-%m-%d') if current_user.birthday else '' }}">
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label small fw-semibold text-muted">Новый пароль (оставь пустым)</label>
+                            <input type="password" name="password" class="form-control form-control-modern" placeholder="••••••••">
+                        </div>
+                        <button type="submit" class="btn btn-outline-primary btn-modern w-100">Сохранить изменения</button>
+                    </form>
+                </div>
             </div>
         </div>
 
@@ -33,7 +63,18 @@
                 <h5 class="fw-bold mb-4 text-primary"><i class="bi bi-shield-lock-fill me-2"></i> Добавить члена семьи</h5>
                 <form action="{{ url_for('create_user') }}" method="POST">
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold text-muted">Имя (например, Сестра Маша)</label>
+                        <label class="form-label small fw-semibold text-muted">Стартовая аватарка (эмодзи)</label>
+                        <div class="d-flex flex-wrap gap-2 p-2 bg-light rounded-3 justify-content-center">
+                            {% for e in emojis %}
+                            <input type="radio" class="btn-check" name="emoji" id="admin_emoji_{{ loop.index }}" value="{{ e }}" {% if loop.first %}checked{% endif %}>
+                            <label class="btn btn-outline-light text-dark border border-2 rounded-circle d-flex align-items-center justify-content-center p-0 emoji-label" for="admin_emoji_{{ loop.index }}" style="width: 34px; height: 34px; font-size: 1.2rem; background: white;">
+                                {{ e }}
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted">Имя</label>
                         <input type="text" name="name" class="form-control form-control-modern" placeholder="Имя для отображения" required>
                     </div>
                     <div class="mb-3">
@@ -41,7 +82,7 @@
                         <input type="text" name="username" class="form-control form-control-modern" placeholder="masha123" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold text-muted">Пароль (выдай его им)</label>
+                        <label class="form-label small fw-semibold text-muted">Пароль</label>
                         <input type="text" name="password" class="form-control form-control-modern" placeholder="Стартовый пароль" required>
                     </div>
                     <div class="mb-3">
