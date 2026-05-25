@@ -7,8 +7,17 @@ import os
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'super-secret-family-key'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///wishhub.db'
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///wishhub.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# --- НАСТРОЙКА ПУТИ К БАЗЕ ДАННЫХ ДЛЯ AMVERA ---
+# Проверяем, существует ли папка /data на сервере
+if os.path.exists('/data'):
+    # Важно: 4 слэша (sqlite:////) означают абсолютный путь в Linux системах
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////data/wishhub.db'
+else:
+    # Если запустили локально на ПК, база по-прежнему будет создаваться в папке проекта
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///wishhub.db'
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
