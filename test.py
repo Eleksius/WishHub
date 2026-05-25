@@ -7,7 +7,7 @@ db.create_all()
 
 admin = User(
     username="eleksius",
-    password_hash=generate_password_hash("10Qpalzm$"),
+    password_hash=generate_password_hash("password"),
     name="Алексей",
     is_admin=True,
     birthday=date(2009, 6, 9),
