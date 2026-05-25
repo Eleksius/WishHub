@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, date
+import os
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'super-secret-family-key'
@@ -259,4 +260,11 @@ def purchase_item(item_id):
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    #app.run(host='0.0.0.0', port=5000, debug=True)
+    env_port = os.environ.get("PORT")
+    if not env_port or env_port == '':
+        server_port = 80
+    else:
+        server_port = int(env_port)
+
+    app.run(host='0.0.0.0', port=server_port)
