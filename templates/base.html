@@ -146,55 +146,36 @@ if ('serviceWorker' in navigator) {
 </script>
 {% block scripts %}{% endblock %}
 <script>
-// ── Конфетти-пушка: два залпа с боков + финальный центральный взрыв ──────
-function launchCelebration() {
-  if (typeof confetti !== 'function') return;
-
-  const colors = ['#6366f1','#06b6d4','#10b981','#f59e0b','#ec4899','#f43f5e','#a855f7'];
-
-  // Непрерывный дождь в течение 3 секунд
-  const end = Date.now() + 3200;
-  let frame;
-
-  function fire(origin, angle, spread) {
-    confetti({
-      particleCount: 6,
-      angle,
-      spread,
-      origin,
-      colors,
-      startVelocity: 45,
-      gravity: 0.9,
-      scalar: 1.1,
-      ticks: 200,
-      drift: 0,
-    });
-  }
-
-  function loop() {
-    fire({ x: 0,    y: 0.65 }, 60,  55);
-    fire({ x: 1,    y: 0.65 }, 120, 55);
-    fire({ x: 0.5,  y: 0.55 }, 90,  80);
-    if (Date.now() < end) {
-      frame = requestAnimationFrame(loop);
-    } else {
-      // Финальный большой взрыв по центру
-      confetti({
-        particleCount: 180,
-        spread: 120,
-        origin: { x: 0.5, y: 0.5 },
-        colors,
-        startVelocity: 35,
-        scalar: 1.2,
-        ticks: 300,
-      });
-    }
-  }
-  loop();
-}
-
+// ── Конфетти — запускается после page-specific scripts ────────────────────
 document.querySelectorAll('.btn-purchase').forEach(btn => {
-  btn.addEventListener('click', launchCelebration);
+  btn.addEventListener('click', function(e) {
+    e.preventDefault();
+    const form = btn.closest('form');
+
+    // Запускаем конфетти
+    if (typeof confetti === 'function') {
+      const colors = ['#6366f1','#06b6d4','#10b981','#f59e0b','#ec4899','#f43f5e','#a855f7'];
+      const end = Date.now() + 2800;
+      function fire(origin, angle, spread) {
+        confetti({ particleCount: 6, angle, spread, origin, colors,
+                   startVelocity: 45, gravity: 0.9, scalar: 1.1, ticks: 220 });
+      }
+      function loop() {
+        fire({ x: 0, y: 0.65 }, 60, 55);
+        fire({ x: 1, y: 0.65 }, 120, 55);
+        fire({ x: 0.5, y: 0.5 }, 90, 90);
+        if (Date.now() < end) requestAnimationFrame(loop);
+        else confetti({ particleCount: 200, spread: 130, origin: { x: 0.5, y: 0.45 },
+                        colors, startVelocity: 38, ticks: 320 });
+      }
+      loop();
+    }
+
+    // Отправляем форму через 900мс — конфетти уже летит
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-gift-fill me-1"></i> 🎉🎉🎉';
+    setTimeout(() => form.submit(), 900);
+  });
 });
 </script>
 </body>
