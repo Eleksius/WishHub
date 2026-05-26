@@ -35,7 +35,7 @@
 <!-- Category filter -->
 {% if wishes %}
 <div class="d-flex gap-2 flex-wrap mb-4">
-  <button class="btn btn-w btn-w-primary btn-sm filter-btn active" data-cat="all">Все ({{ total }})</button>
+  <button class="btn btn-w btn-sm filter-btn filter-active" data-cat="all">Все ({{ total }})</button>
   {% for key, emoji, label, grad in categories %}
     {% set count = wishes|selectattr('category','equalto',key)|list|length %}
     {% if count > 0 %}
@@ -165,13 +165,24 @@
 
 {% endblock %}
 {% block scripts %}
+<style>
+.filter-btn { transition: all .18s; }
+.filter-active {
+  background: linear-gradient(135deg,#6366f1,#4f46e5) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 12px rgba(99,102,241,.3);
+}
+.filter-active:hover { color: #fff !important; }
+</style>
 <script>
 document.querySelectorAll('.filter-btn').forEach(btn => {
   btn.addEventListener('click', function() {
     document.querySelectorAll('.filter-btn').forEach(b => {
-      b.className = 'btn btn-w btn-w-light btn-sm filter-btn';
+      b.classList.remove('filter-active');
+      b.classList.add('btn-w-light');
     });
-    this.className = 'btn btn-w btn-w-primary btn-sm filter-btn active';
+    this.classList.add('filter-active');
+    this.classList.remove('btn-w-light');
     const cat = this.dataset.cat;
     document.querySelectorAll('.wish-col').forEach(col => {
       col.style.display = (cat === 'all' || col.dataset.cat === cat) ? '' : 'none';

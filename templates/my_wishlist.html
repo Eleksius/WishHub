@@ -210,11 +210,11 @@
             <label class="lbl">Приоритет</label>
             <div class="d-flex gap-2 flex-wrap">
               <input type="radio" class="btn-check" name="priority" id="p_high" value="high">
-              <label for="p_high" class="btn btn-w btn-w-light btn-sm">🔥 Очень хочу</label>
+              <label for="p_high" class="btn btn-w btn-w-light btn-sm prio-radio-label">🔥 Очень хочу</label>
               <input type="radio" class="btn-check" name="priority" id="p_medium" value="medium" checked>
-              <label for="p_medium" class="btn btn-w btn-w-light btn-sm">✨ Хочу</label>
+              <label for="p_medium" class="btn btn-w btn-w-light btn-sm prio-radio-label">✨ Хочу</label>
               <input type="radio" class="btn-check" name="priority" id="p_low" value="low">
-              <label for="p_low" class="btn btn-w btn-w-light btn-sm">💭 Не срочно</label>
+              <label for="p_low" class="btn btn-w btn-w-light btn-sm prio-radio-label">💭 Не срочно</label>
             </div>
           </div>
           <div class="col-12">
@@ -256,9 +256,7 @@
               <span class="cat-chip">{{ category_map[wish.category].emoji }} {{ category_map[wish.category].label }}</span>
               {% if wish.price %}<span class="fw-700" style="color:#6366f1">{{ '{:,.0f}'.format(wish.price).replace(',', ' ') }} ₽</span>{% endif %}
               {% if wish.link %}<a href="{{ wish.link }}" target="_blank" class="text-muted" style="font-size:.82rem"><i class="bi bi-link-45deg"></i> ссылка</a>{% endif %}
-              {% if wish.booked_by_id %}
-              <span class="badge" style="background:#fef3c7;color:#d97706;font-size:.75rem"><i class="bi bi-lock-fill me-1"></i>Кто-то бронирует 🤫</span>
-              {% endif %}
+              {# Владелец не видит кто бронирует — пусть будет сюрприз #}
             </div>
             {% if wish.description %}
             <p class="text-muted mt-1 mb-0" style="font-size:.85rem">{{ wish.description[:120] }}{% if wish.description|length > 120 %}…{% endif %}</p>
@@ -332,14 +330,39 @@ fetchBtn.addEventListener('click', async () => {
 // Category radio label styling
 document.querySelectorAll('.btn-check[name="category"]').forEach(radio => {
   radio.addEventListener('change', () => {
-    document.querySelectorAll('.cat-radio-label').forEach(l => l.classList.remove('btn-w-primary'));
+    document.querySelectorAll('.cat-radio-label').forEach(l => {
+      l.classList.remove('btn-w-primary'); l.classList.add('btn-w-light');
+    });
     if (radio.checked) {
-      document.querySelector('label[for="' + radio.id + '"]').classList.add('btn-w-primary');
+      const lbl = document.querySelector('label[for="' + radio.id + '"]');
+      lbl.classList.add('btn-w-primary'); lbl.classList.remove('btn-w-light');
     }
   });
 });
-// Init
+// Init category
 const checked = document.querySelector('.btn-check[name="category"]:checked');
-if (checked) document.querySelector('label[for="' + checked.id + '"]').classList.add('btn-w-primary');
+if (checked) {
+  const lbl = document.querySelector('label[for="' + checked.id + '"]');
+  lbl.classList.add('btn-w-primary'); lbl.classList.remove('btn-w-light');
+}
+
+// Priority radio label styling
+document.querySelectorAll('.btn-check[name="priority"]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    document.querySelectorAll('.prio-radio-label').forEach(l => {
+      l.classList.remove('btn-w-primary'); l.classList.add('btn-w-light');
+    });
+    if (radio.checked) {
+      const lbl = document.querySelector('label[for="' + radio.id + '"]');
+      lbl.classList.add('btn-w-primary'); lbl.classList.remove('btn-w-light');
+    }
+  });
+});
+// Init priority
+const checkedP = document.querySelector('.btn-check[name="priority"]:checked');
+if (checkedP) {
+  const lbl = document.querySelector('label[for="' + checkedP.id + '"]');
+  lbl.classList.add('btn-w-primary'); lbl.classList.remove('btn-w-light');
+}
 </script>
 {% endblock %}

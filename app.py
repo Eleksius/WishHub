@@ -220,7 +220,7 @@ def my_wishlist():
         db.session.commit()
         flash('Желание добавлено! ✨', 'success')
         return redirect(url_for('my_wishlist'))
-    wishes = WishItem.query.filter_by(user_id=current_user.id).order_by(WishItem.created_at.desc()).all()
+    wishes = WishItem.query.filter_by(user_id=current_user.id, is_purchased=False).order_by(WishItem.created_at.desc()).all()
     family_events = FamilyEvent.query.all()
     return render_template('my_wishlist.html', wishes=wishes, emojis=EMOJIS,
                            categories=CATEGORIES, category_map=CATEGORY_MAP,
