@@ -1,94 +1,182 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="d-flex align-items-center gap-3 mb-4">
-    <a href="{{ url_for('index') }}" class="btn btn-light btn-modern shadow-sm">
-        <i class="bi bi-arrow-left"></i> На главную
+
+<!-- User banner -->
+<div class="card-w p-4 mb-4">
+  <div class="d-flex flex-wrap align-items-center gap-4">
+    <a href="{{ url_for('index') }}" class="btn btn-w btn-w-light">
+      <i class="bi bi-arrow-left me-1"></i> Назад
     </a>
+    <div class="d-flex align-items-center gap-3 flex-grow-1">
+      <div class="d-flex align-items-center justify-content-center rounded-circle"
+           style="width:60px;height:60px;font-size:2rem;background:linear-gradient(135deg,#e0e7ff,#ede9fe);flex-shrink:0">
+        {{ target_user.emoji }}
+      </div>
+      <div>
+        <h4 class="fw-800 mb-0">{{ target_user.name }}</h4>
+        <span class="text-muted" style="font-size:.85rem">@{{ target_user.username }}</span>
+        {% if target_user.birthday %}
+        <span class="badge ms-2 rounded-pill px-2 py-1" style="background:#fdf4ff;color:#8b5cf6;font-size:.75rem">
+          <i class="bi bi-calendar-heart me-1"></i>{{ target_user.birthday.strftime('%d.%m.%Y') }}
+        </span>
+        {% endif %}
+      </div>
+    </div>
+    <!-- Stats -->
+    {% set total = wishes|length %}
+    {% set booked = wishes|selectattr('booked_by_id')|list|length %}
+    <div class="text-end">
+      <div class="fw-700" style="font-size:1.5rem;color:#6366f1">{{ total }}</div>
+      <div class="text-muted" style="font-size:.8rem">желаний</div>
+    </div>
+  </div>
 </div>
 
-<div class="row">
-    <div class="col-md-4 mb-4">
-        <div class="card-modern p-4 text-center bg-white shadow-sm">
-            <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center mb-3" style="width: 85px; height: 85px; font-size: 2.5rem;">
-                {{ target_user.emoji }}
+<!-- Category filter -->
+{% if wishes %}
+<div class="d-flex gap-2 flex-wrap mb-4">
+  <button class="btn btn-w btn-w-primary btn-sm filter-btn active" data-cat="all">Все ({{ total }})</button>
+  {% for key, emoji, label, grad in categories %}
+    {% set count = wishes|selectattr('category','equalto',key)|list|length %}
+    {% if count > 0 %}
+    <button class="btn btn-w btn-w-light btn-sm filter-btn" data-cat="{{ key }}">{{ emoji }} {{ label }} ({{ count }})</button>
+    {% endif %}
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- Wishes grid -->
+{% if wishes %}
+<div class="row g-3" id="wish-grid">
+  {% for wish in wishes %}
+  <div class="col-md-6 wish-col" data-cat="{{ wish.category }}">
+    <div class="card-w h-100" id="wish-{{ wish.id }}">
+
+      <!-- Image or gradient header -->
+      {% if wish.image_url %}
+      <div style="height:180px;border-radius:16px 16px 0 0;overflow:hidden">
+        <img src="{{ wish.image_url }}" alt="{{ wish.title }}"
+             style="width:100%;height:100%;object-fit:cover"
+             onerror="this.parentElement.innerHTML='<div style=\'height:180px;border-radius:16px 16px 0 0;background:{{ category_map[wish.category].gradient }};display:flex;align-items:center;justify-content:center;font-size:4rem\'></div>'">
+      </div>
+      {% else %}
+      <div style="height:120px;border-radius:16px 16px 0 0;background:{{ category_map[wish.category].gradient }};display:flex;align-items:center;justify-content:center;font-size:3.5rem">
+        {{ category_map[wish.category].emoji }}
+      </div>
+      {% endif %}
+
+      <!-- Body -->
+      <div class="p-4">
+        <!-- Badges -->
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <span class="cat-chip">{{ category_map[wish.category].emoji }} {{ category_map[wish.category].label }}</span>
+          {% if wish.priority == 'high' %}
+          <span class="badge-priority prio-high">🔥 Очень хочет</span>
+          {% elif wish.priority == 'low' %}
+          <span class="badge-priority prio-low">💭 Не срочно</span>
+          {% else %}
+          <span class="badge-priority prio-medium">✨ Хочет</span>
+          {% endif %}
+        </div>
+
+        <h5 class="fw-700 mb-1">{{ wish.title }}</h5>
+        {% if wish.description %}
+        <p class="text-muted mb-2" style="font-size:.9rem;line-height:1.5">{{ wish.description }}</p>
+        {% endif %}
+
+        <!-- Price + link -->
+        <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+          {% if wish.price %}
+          <span class="fw-700" style="color:#6366f1;font-size:1.05rem">
+            {{ '{:,.0f}'.format(wish.price).replace(',', ' ') }} ₽
+          </span>
+          {% endif %}
+          {% if wish.link %}
+          <a href="{{ wish.link }}" target="_blank" rel="noopener"
+             class="btn btn-w btn-w-light btn-sm">
+            <i class="bi bi-link-45deg me-1"></i> Ссылка
+          </a>
+          {% endif %}
+        </div>
+
+        <!-- Booking -->
+        {% if not wish.booked_by_id %}
+        <form method="POST" action="{{ url_for('book_item', item_id=wish.id) }}">
+          <button type="submit" class="btn btn-w btn-w-primary w-100">
+            <i class="bi bi-bookmark-heart me-1"></i> Забронировать подарок
+          </button>
+        </form>
+        {% elif wish.booked_by_id == current_user.id %}
+        <div class="p-3 rounded-3 mb-2" style="background:#fffbeb;border:1.5px solid #fde68a">
+          <p class="fw-600 text-center mb-2" style="color:#d97706">
+            <i class="bi bi-bookmark-check-fill me-1"></i> Ты забронировал этот подарок
+          </p>
+          <div class="d-flex gap-2">
+            <form method="POST" action="{{ url_for('purchase_item', item_id=wish.id) }}" class="flex-grow-1">
+              <button type="submit" class="btn btn-w btn-w-success w-100 btn-purchase">
+                <i class="bi bi-gift-fill me-1"></i> Уже подарил! 🎉
+              </button>
+            </form>
+            <form method="POST" action="{{ url_for('unbook_item', item_id=wish.id) }}">
+              <button type="submit" class="btn btn-w btn-w-light">Отмена</button>
+            </form>
+          </div>
+        </div>
+        {% else %}
+        <div class="text-center py-2 px-3 rounded-3" style="background:#f1f5f9">
+          <span class="text-muted fw-600" style="font-size:.9rem">
+            <i class="bi bi-lock-fill me-1"></i> Уже берёт: {{ wish.booked_by.name }} {{ wish.booked_by.emoji }}
+          </span>
+        </div>
+        {% endif %}
+
+        <!-- Comments -->
+        <div class="mt-3 pt-3" style="border-top:1px solid #f1f5f9">
+          {% if wish.comments %}
+          <div class="mb-2">
+            {% for c in wish.comments %}
+            <div class="d-flex gap-2 mb-2">
+              <span class="fw-600" style="font-size:.85rem;color:#6366f1;white-space:nowrap">{{ c.author.emoji }} {{ c.author.name }}:</span>
+              <span style="font-size:.85rem;color:#475569">{{ c.text }}</span>
             </div>
-            <h4 class="fw-bold mb-1">{{ target_user.name }}</h4>
-            <p class="text-muted small mb-3">@{{ target_user.username }}</p>
-
-            {% if target_user.birthday %}
-                <p class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill mb-0" style="font-weight: 500;">
-                    <i class="bi bi-calendar-heart me-1"></i> День рождения: {{ target_user.birthday.strftime('%d.%m.%Y') }}
-                </p>
-            {% else %}
-                <p class="text-muted small mb-0"><i class="bi bi-calendar-x me-1"></i> Дата рождения не указана</p>
-            {% endif %}
-        </div>
-    </div>
-
-    <div class="col-md-8">
-        <h4 class="fw-bold mb-4"><i class="bi bi-stars text-warning"></i> Идеи для подарка</h4>
-
-        <div class="row">
-            {% for wish in wishes %}
-                {% if not wish.is_purchased %}
-                <div class="col-md-12 mb-3">
-                    <div class="card-modern p-3 bg-white h-100 {% if wish.booked_by_id %}border border-2 border-warning bg-warning bg-opacity-10{% endif %}">
-                        <div class="card-body d-flex flex-column justify-content-between">
-                            <div>
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <h5 class="fw-bold mb-0">{{ wish.title }}</h5>
-                                    {% if wish.priority == 'high' %}
-                                        <span class="badge bg-danger text-white badge-priority">🔥 Очень хочет</span>
-                                    {% elif wish.priority == 'low' %}
-                                        <span class="badge bg-secondary text-white badge-priority">💭 Скромное</span>
-                                    {% else %}
-                                        <span class="badge bg-primary text-white badge-priority">✨ Средний</span>
-                                    {% endif %}
-                                </div>
-                                <p class="text-muted mb-3">{{ wish.description }}</p>
-
-                                {% if wish.link %}
-                                    <a href="{{ wish.link }}" target="_blank" class="btn btn-sm btn-light text-primary rounded-3 mb-3">
-                                        <i class="bi bi-link-45deg"></i> Ссылка на магазин
-                                    </a>
-                                {% endif %}
-                            </div>
-
-                            <div class="mt-2">
-                                {% if not wish.booked_by_id %}
-                                    <a href="{{ url_for('book_item', item_id=wish.id) }}" class="btn btn-primary btn-modern w-100 shadow-sm">
-                                        <i class="bi bi-bookmark-heart me-1"></i> Забронировать подарок
-                                    </a>
-                                {% elif wish.booked_by_id == current_user.id %}
-                                    <div class="bg-warning bg-opacity-10 p-3 rounded-3 text-center">
-                                        <span class="text-warning fw-bold d-block mb-3"><i class="bi bi-exclamation-triangle"></i> Ты забронировал этот подарок</span>
-                                        <div class="d-flex gap-2">
-                                            <a href="{{ url_for('purchase_item', item_id=wish.id) }}" class="btn btn-success btn-modern flex-grow-1 text-white">
-                                                <i class="bi bi-gift-fill me-1"></i> Уже подарил!
-                                            </a>
-                                            <a href="{{ url_for('unbook_item', item_id=wish.id) }}" class="btn btn-outline-secondary btn-modern">
-                                                Отменить
-                                            </a>
-                                        </div>
-                                    </div>
-                                {% else %}
-                                    <div class="text-center py-2 bg-secondary bg-opacity-10 rounded-3">
-                                        <span class="text-muted fw-semibold"><i class="bi bi-lock-fill me-1"></i> Занято: {{ wish.booked_by.name }}</span>
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
-            {% else %}
-                <div class="col-12">
-                    <div class="text-center p-5 card-modern bg-white shadow-sm">
-                        <p class="text-muted mb-0">У пользователя пока нет желаний. Может, стоит подкинуть ему пару идей? 😉</p>
-                    </div>
-                </div>
             {% endfor %}
+          </div>
+          {% endif %}
+          <form method="POST" action="{{ url_for('add_comment', item_id=wish.id) }}" class="d-flex gap-2">
+            <input type="text" name="text" class="input-w" placeholder="Написать заметку (видно всем кроме именинника)" style="font-size:.85rem;padding:8px 12px">
+            <button type="submit" class="btn btn-w btn-w-light" style="flex-shrink:0;padding:8px 14px">
+              <i class="bi bi-send-fill" style="color:#6366f1"></i>
+            </button>
+          </form>
         </div>
+      </div>
     </div>
+  </div>
+  {% endfor %}
 </div>
+
+{% else %}
+<div class="text-center py-5 card-w">
+  <div style="font-size:4rem">🌟</div>
+  <h4 class="fw-700 mt-3">Список желаний пока пуст</h4>
+  <p class="text-muted">{{ target_user.name }} ещё не добавил желания. Может, намекнуть? 😉</p>
+</div>
+{% endif %}
+
+{% endblock %}
+{% block scripts %}
+<script>
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.filter-btn').forEach(b => {
+      b.className = 'btn btn-w btn-w-light btn-sm filter-btn';
+    });
+    this.className = 'btn btn-w btn-w-primary btn-sm filter-btn active';
+    const cat = this.dataset.cat;
+    document.querySelectorAll('.wish-col').forEach(col => {
+      col.style.display = (cat === 'all' || col.dataset.cat === cat) ? '' : 'none';
+    });
+  });
+});
+</script>
 {% endblock %}

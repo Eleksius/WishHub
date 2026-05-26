@@ -1,177 +1,345 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="row">
-    <div class="col-md-4 mb-4">
 
-        <div class="card-modern p-4 mb-4 text-center bg-white">
-            <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center mb-3" style="width: 85px; height: 85px; font-size: 2.5rem; shadow-sm">
-                {{ current_user.emoji }}
-            </div>
-            <h4 class="fw-bold mb-1">{{ current_user.name }}</h4>
-            <p class="text-muted small mb-3">@{{ current_user.username }}</p>
-            {% if current_user.birthday %}
-                <p class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill mb-3" style="font-weight: 500;">
-                    <i class="bi bi-calendar-heart me-1"></i> {{ current_user.birthday.strftime('%d.%m.%Y') }}
-                </p>
-            {% endif %}
-            <button class="btn btn-outline-primary btn-modern w-100 shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#editProfileForm">
-                <i class="bi bi-pencil-square me-1"></i> Редактировать профиль
-            </button>
-        </div>
+<div class="row g-4">
 
-        <div class="collapse mb-4" id="editProfileForm">
-            <div class="card-modern p-3 border-start border-primary border-4 shadow-sm">
-                <div class="card-body">
-                    <h5 class="fw-bold mb-4 text-primary"><i class="bi bi-sliders me-2"></i> Настройки профиля</h5>
-                    <form action="{{ url_for('update_profile') }}" method="POST">
-                        <div class="mb-3">
-                            <label class="form-label small fw-semibold text-muted">Выберите аватарку (эмодзи)</label>
-                            <div class="d-flex flex-wrap gap-2 p-2 bg-light rounded-3 justify-content-center">
-                                {% for e in emojis %}
-                                <input type="radio" class="btn-check" name="emoji" id="emoji_{{ loop.index }}" value="{{ e }}" {% if current_user.emoji == e %}checked{% endif %}>
-                                <label class="btn btn-outline-light text-dark border border-2 rounded-circle d-flex align-items-center justify-content-center p-0 emoji-label" for="emoji_{{ loop.index }}" style="width: 38px; height: 38px; font-size: 1.4rem; background: white;">
-                                    {{ e }}
-                                </label>
-                                {% endfor %}
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-semibold text-muted">Имя на сайте</label>
-                            <input type="text" name="name" class="form-control form-control-modern" value="{{ current_user.name }}" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-semibold text-muted">Логин (username)</label>
-                            <input type="text" name="username" class="form-control form-control-modern" value="{{ current_user.username }}" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-semibold text-muted">Дата рождения</label>
-                            <input type="date" name="birthday" class="form-control form-control-modern" value="{{ current_user.birthday.strftime('%Y-%m-%d') if current_user.birthday else '' }}">
-                        </div>
-                        <div class="mb-4">
-                            <label class="form-label small fw-semibold text-muted">Новый пароль (оставь пустым)</label>
-                            <input type="password" name="password" class="form-control form-control-modern" placeholder="••••••••">
-                        </div>
-                        <button type="submit" class="btn btn-outline-primary btn-modern w-100">Сохранить изменения</button>
-                    </form>
-                </div>
-            </div>
-        </div>
+<!-- ── Left: Profile + Admin ── -->
+<div class="col-lg-4">
 
-        {% if current_user.is_admin %}
-        <div class="card-modern p-3 mb-4 border-start border-primary border-4 shadow-sm">
-            <div class="card-body">
-                <h5 class="fw-bold mb-4 text-primary"><i class="bi bi-shield-lock-fill me-2"></i> Добавить члена семьи</h5>
-                <form action="{{ url_for('create_user') }}" method="POST">
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-muted">Стартовая аватарка (эмодзи)</label>
-                        <div class="d-flex flex-wrap gap-2 p-2 bg-light rounded-3 justify-content-center">
-                            {% for e in emojis %}
-                            <input type="radio" class="btn-check" name="emoji" id="admin_emoji_{{ loop.index }}" value="{{ e }}" {% if loop.first %}checked{% endif %}>
-                            <label class="btn btn-outline-light text-dark border border-2 rounded-circle d-flex align-items-center justify-content-center p-0 emoji-label" for="admin_emoji_{{ loop.index }}" style="width: 34px; height: 34px; font-size: 1.2rem; background: white;">
-                                {{ e }}
-                            </label>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-muted">Имя</label>
-                        <input type="text" name="name" class="form-control form-control-modern" placeholder="Имя для отображения" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-muted">Логин (для входа)</label>
-                        <input type="text" name="username" class="form-control form-control-modern" placeholder="masha123" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-muted">Пароль</label>
-                        <input type="text" name="password" class="form-control form-control-modern" placeholder="Стартовый пароль" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-muted">Дата рождения</label>
-                        <input type="date" name="birthday" class="form-control form-control-modern">
-                    </div>
-                    <div class="form-check mb-4">
-                        <input class="form-check-input" type="checkbox" name="is_admin" id="isAdminCheck">
-                        <label class="form-check-label small fw-semibold text-muted" for="isAdminCheck">
-                            Сделать администратором сайта
-                        </label>
-                    </div>
-                    <button type="submit" class="btn btn-primary btn-modern w-100">Зарегистрировать</button>
-                </form>
-            </div>
-        </div>
-        {% endif %}
-
-        <div class="card-modern p-3">
-            <div class="card-body">
-                <h5 class="fw-bold mb-4 text-success"><i class="bi bi-plus-circle me-2"></i> Загадать подарок</h5>
-                <form method="POST">
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-muted">Что ты хочешь?</label>
-                        <input type="text" name="title" class="form-control form-control-modern" placeholder="Название подарка" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-muted">Приоритет важности</label>
-                        <select name="priority" class="form-select form-control-modern">
-                            <option value="high">🔥 Очень хочется</option>
-                            <option value="medium" selected>✨ Было бы здорово</option>
-                            <option value="low">💭 Когда-нибудь потом</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-muted">Ссылка на магазин</label>
-                        <input type="url" name="link" class="form-control form-control-modern" placeholder="https://...">
-                    </div>
-                    <div class="mb-4">
-                        <label class="form-label small fw-semibold text-muted">Детали (размер, цвет, модель)</label>
-                        <textarea name="description" class="form-control form-control-modern" placeholder="Укажи важные нюансы..."></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-success btn-modern w-100 shadow-sm">Добавить в список</button>
-                </form>
-            </div>
-        </div>
+  <!-- Profile card -->
+  <div class="card-w p-4 mb-4">
+    <div class="text-center mb-3">
+      <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-2"
+           style="width:72px;height:72px;font-size:2.5rem;background:linear-gradient(135deg,#e0e7ff,#ede9fe)">
+        {{ current_user.emoji }}
+      </div>
+      <h5 class="fw-800 mb-0">{{ current_user.name }}</h5>
+      <span class="text-muted" style="font-size:.85rem">@{{ current_user.username }}</span>
+      {% if current_user.is_admin %}
+      <div class="mt-1"><span class="badge" style="background:#fdf4ff;color:#8b5cf6">👑 Администратор</span></div>
+      {% endif %}
     </div>
 
-    <div class="col-md-8">
-        <h4 class="fw-bold mb-4"><i class="bi bi-stars text-warning"></i> Мои текущие желания</h4>
-        {% for wish in wishes %}
-            {% if not wish.is_purchased %}
-            <div class="card-modern mb-3 p-3">
-                <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-3">
-                    <div>
-                        <div class="d-flex align-items-center gap-2 mb-2">
-                            <h5 class="fw-bold mb-0">{{ wish.title }}</h5>
-                            {% if wish.priority == 'high' %}
-                                <span class="badge bg-danger bg-opacity-10 text-danger badge-priority">🔥 Высокий</span>
-                            {% elif wish.priority == 'low' %}
-                                <span class="badge bg-secondary bg-opacity-10 text-secondary badge-priority">💭 Низкий</span>
-                            {% else %}
-                                <span class="badge bg-primary bg-opacity-10 text-primary badge-priority">✨ Средний</span>
-                            {% endif %}
-                        </div>
-                        <p class="text-muted mb-2">{{ wish.description }}</p>
-                        {% if wish.link %}
-                            <a href="{{ wish.link }}" target="_blank" class="btn btn-sm btn-light text-primary rounded-3"><i class="bi bi-link-45deg"></i> Перейти в магазин</a>
-                        {% endif %}
-                    </div>
-                    <a href="{{ url_for('delete_wish', item_id=wish.id) }}" class="btn btn-sm btn-outline-danger btn-modern"><i class="bi bi-trash3"></i></a>
-                </div>
-            </div>
-            {% endif %}
-        {% else %}
-            <p class="text-muted p-4 text-center card-modern bg-white">Твой вишлист пока пуст. Самое время забить его хотелками!</p>
-        {% endfor %}
+    <button class="btn btn-w btn-w-light w-100" type="button" data-bs-toggle="collapse" data-bs-target="#profileForm">
+      <i class="bi bi-pencil-fill me-1"></i> Редактировать профиль
+    </button>
 
-        <h4 class="fw-bold mb-4 mt-5 text-success"><i class="bi bi-check2-circle"></i> Подаренное (Архив)</h4>
-        {% for wish in wishes %}
-            {% if wish.is_purchased %}
-            <div class="card-modern mb-2 p-2 bg-light border-0 opacity-75">
-                <div class="card-body d-flex justify-content-between align-items-center">
-                    <span class="text-success text-decoration-line-through fw-semibold fs-5"><i class="bi bi-gift me-2"></i> {{ wish.title }}</span>
-                    <span class="badge bg-success rounded-pill px-3 py-2">Уже у меня!</span>
-                </div>
-            </div>
-            {% endif %}
-        {% endfor %}
+    <div class="collapse mt-3" id="profileForm">
+      <form method="POST" action="{{ url_for('update_profile') }}">
+        <div class="mb-3">
+          <label class="lbl">Имя</label>
+          <input type="text" name="name" class="input-w" value="{{ current_user.name }}" required>
+        </div>
+        <div class="mb-3">
+          <label class="lbl">Логин</label>
+          <input type="text" name="username" class="input-w" value="{{ current_user.username }}" required>
+        </div>
+        <div class="mb-3">
+          <label class="lbl">День рождения</label>
+          <input type="date" name="birthday" class="input-w"
+                 value="{{ current_user.birthday.strftime('%Y-%m-%d') if current_user.birthday else '' }}">
+        </div>
+        <div class="mb-3">
+          <label class="lbl">Новый пароль (оставь пустым чтобы не менять)</label>
+          <input type="password" name="password" class="input-w" placeholder="••••••••" minlength="4">
+        </div>
+        <div class="mb-3">
+          <label class="lbl">Аватарка</label>
+          <div class="d-flex flex-wrap gap-2">
+            {% for em in emojis %}
+            <input type="radio" class="btn-check" name="emoji" id="e_{{ loop.index }}" value="{{ em }}"
+                   {% if current_user.emoji == em %}checked{% endif %}>
+            <label class="emoji-label" for="e_{{ loop.index }}">{{ em }}</label>
+            {% endfor %}
+          </div>
+        </div>
+        <button type="submit" class="btn btn-w btn-w-primary w-100">
+          <i class="bi bi-check-lg me-1"></i> Сохранить
+        </button>
+      </form>
     </div>
+  </div>
+
+  <!-- Family events -->
+  <div class="card-w p-4 mb-4">
+    <h6 class="fw-700 mb-3" style="font-size:.8rem;text-transform:uppercase;letter-spacing:.5px;color:#64748b">
+      <i class="bi bi-calendar-plus me-1"></i> Семейные события
+    </h6>
+    {% for ev in family_events %}
+    <div class="d-flex align-items-center gap-2 mb-2 p-2 rounded-3" style="background:#f8fafc">
+      <i class="bi {{ ev.icon }}" style="color:#6366f1"></i>
+      <span class="flex-grow-1" style="font-size:.88rem;font-weight:500">{{ ev.name }}</span>
+      <span class="text-muted" style="font-size:.8rem">{{ '%02d.%02d'|format(ev.day,ev.month) }}</span>
+      {% if ev.created_by_id == current_user.id or current_user.is_admin %}
+      <form method="POST" action="{{ url_for('delete_event', event_id=ev.id) }}" class="m-0">
+        <button type="submit" class="btn p-0 border-0 bg-transparent text-muted" style="font-size:.8rem" title="Удалить">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </form>
+      {% endif %}
+    </div>
+    {% else %}
+    <p class="text-muted mb-2" style="font-size:.85rem">Событий пока нет</p>
+    {% endfor %}
+
+    <button class="btn btn-w btn-w-light w-100 mt-2" type="button" data-bs-toggle="collapse" data-bs-target="#addEventForm">
+      <i class="bi bi-plus-circle me-1"></i> Добавить событие
+    </button>
+    <div class="collapse mt-3" id="addEventForm">
+      <form method="POST" action="{{ url_for('add_event') }}">
+        <div class="mb-2">
+          <input type="text" name="name" class="input-w" placeholder="Название события" required style="font-size:.9rem">
+        </div>
+        <div class="d-flex gap-2 mb-2">
+          <input type="number" name="day" class="input-w" placeholder="День" min="1" max="31" required style="font-size:.9rem">
+          <input type="number" name="month" class="input-w" placeholder="Месяц" min="1" max="12" required style="font-size:.9rem">
+        </div>
+        <div class="mb-2">
+          <select name="icon" class="input-w" style="font-size:.9rem">
+            {% for icon, label in event_icons %}
+            <option value="{{ icon }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn btn-w btn-w-primary w-100" style="font-size:.9rem">
+          <i class="bi bi-plus me-1"></i> Добавить
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Admin panel -->
+  {% if current_user.is_admin %}
+  <div class="card-w p-4" style="border:2px solid #e0e7ff">
+    <h6 class="fw-700 mb-3" style="font-size:.8rem;text-transform:uppercase;letter-spacing:.5px;color:#6366f1">
+      <i class="bi bi-shield-fill me-1"></i> Добавить в семью
+    </h6>
+    <form method="POST" action="{{ url_for('create_user') }}">
+      <div class="mb-2">
+        <input type="text" name="name" class="input-w" placeholder="Имя" required style="font-size:.9rem">
+      </div>
+      <div class="mb-2">
+        <input type="text" name="username" class="input-w" placeholder="Логин" required style="font-size:.9rem">
+      </div>
+      <div class="mb-2">
+        <input type="password" name="password" class="input-w" placeholder="Пароль" required minlength="4" style="font-size:.9rem">
+      </div>
+      <div class="mb-2">
+        <input type="date" name="birthday" class="input-w" style="font-size:.9rem">
+      </div>
+      <div class="mb-2">
+        <div class="d-flex flex-wrap gap-1">
+          {% for em in emojis %}
+          <input type="radio" class="btn-check" name="emoji" id="ne_{{ loop.index }}" value="{{ em }}" {% if loop.first %}checked{% endif %}>
+          <label class="emoji-label" for="ne_{{ loop.index }}" style="width:36px;height:36px;font-size:1.1rem">{{ em }}</label>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="form-check mb-3">
+        <input type="checkbox" name="is_admin" id="is_admin" class="form-check-input">
+        <label for="is_admin" class="form-check-label" style="font-size:.88rem">Права администратора</label>
+      </div>
+      <button type="submit" class="btn btn-w btn-w-primary w-100" style="font-size:.9rem">
+        <i class="bi bi-person-plus-fill me-1"></i> Добавить
+      </button>
+    </form>
+  </div>
+  {% endif %}
+
 </div>
+
+<!-- ── Right: My Wishes ── -->
+<div class="col-lg-8">
+
+  <!-- Add wish button / form -->
+  <div class="card-w p-4 mb-4" style="border:2px dashed #c7d2fe">
+    <div class="d-flex align-items-center justify-content-between mb-0">
+      <div>
+        <h5 class="fw-800 mb-0">✨ Добавить желание</h5>
+        <p class="text-muted mb-0" style="font-size:.85rem">Расскажи, что хочешь получить</p>
+      </div>
+      <button class="btn btn-w btn-w-primary" type="button" data-bs-toggle="collapse" data-bs-target="#addWishForm">
+        <i class="bi bi-plus-lg me-1"></i> Добавить
+      </button>
+    </div>
+
+    <div class="collapse mt-4" id="addWishForm">
+      <form method="POST" action="{{ url_for('my_wishlist') }}" id="wishForm">
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="lbl">Название *</label>
+            <input type="text" name="title" class="input-w" placeholder="Например: Беспроводные наушники Sony" required maxlength="100">
+          </div>
+          <div class="col-12">
+            <label class="lbl">Описание</label>
+            <textarea name="description" class="input-w" rows="2" placeholder="Цвет, размер, модель..." maxlength="1000" style="resize:vertical"></textarea>
+          </div>
+          <div class="col-md-8">
+            <label class="lbl">Ссылка на товар</label>
+            <input type="url" name="link" id="linkInput" class="input-w" placeholder="https://..." maxlength="500">
+          </div>
+          <div class="col-md-4">
+            <label class="lbl">Цена (₽)</label>
+            <input type="text" name="price" class="input-w" placeholder="5 000">
+          </div>
+          <div class="col-12">
+            <label class="lbl">Картинка (URL) — или заполнится автоматически из ссылки</label>
+            <div class="d-flex gap-2 align-items-start">
+              <input type="url" name="image_url" id="imageUrlInput" class="input-w" placeholder="https://..." maxlength="500">
+              <button type="button" id="fetchPreviewBtn" class="btn btn-w btn-w-light" style="flex-shrink:0;white-space:nowrap">
+                <i class="bi bi-image me-1"></i> Найти
+              </button>
+            </div>
+            <div id="imgPreview" class="mt-2" style="display:none">
+              <img id="previewImg" src="" alt="preview"
+                   style="height:100px;border-radius:10px;object-fit:cover;border:2px solid #e0e7ff">
+            </div>
+          </div>
+          <div class="col-12">
+            <label class="lbl">Категория</label>
+            <div class="d-flex flex-wrap gap-2">
+              {% for key, emoji, label, grad in categories %}
+              <input type="radio" class="btn-check" name="category" id="cat_{{ key }}" value="{{ key }}" {% if loop.first %}checked{% endif %}>
+              <label for="cat_{{ key }}" class="btn btn-w btn-w-light btn-sm cat-radio-label" style="border-radius:10px;gap:4px">
+                {{ emoji }} {{ label }}
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="col-12">
+            <label class="lbl">Приоритет</label>
+            <div class="d-flex gap-2 flex-wrap">
+              <input type="radio" class="btn-check" name="priority" id="p_high" value="high">
+              <label for="p_high" class="btn btn-w btn-w-light btn-sm">🔥 Очень хочу</label>
+              <input type="radio" class="btn-check" name="priority" id="p_medium" value="medium" checked>
+              <label for="p_medium" class="btn btn-w btn-w-light btn-sm">✨ Хочу</label>
+              <input type="radio" class="btn-check" name="priority" id="p_low" value="low">
+              <label for="p_low" class="btn btn-w btn-w-light btn-sm">💭 Не срочно</label>
+            </div>
+          </div>
+          <div class="col-12">
+            <button type="submit" class="btn btn-w btn-w-primary px-4">
+              <i class="bi bi-stars me-1"></i> Добавить желание
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Wishes list -->
+  <h5 class="fw-800 mb-3">Мои желания
+    <span class="badge rounded-pill ms-2 fw-600" style="background:#e0e7ff;color:#4f46e5;font-size:.75rem">{{ wishes|length }}</span>
+  </h5>
+
+  {% if wishes %}
+  {% for wish in wishes %}
+  <div class="card-w mb-3 overflow-hidden">
+    <div class="d-flex">
+      <!-- Color stripe or image -->
+      {% if wish.image_url %}
+      <div style="width:100px;flex-shrink:0;background-image:url('{{ wish.image_url }}');background-size:cover;background-position:center"></div>
+      {% else %}
+      <div style="width:10px;flex-shrink:0;background:{{ category_map[wish.category].gradient }}"></div>
+      {% endif %}
+
+      <div class="p-3 flex-grow-1">
+        <div class="d-flex justify-content-between align-items-start">
+          <div class="flex-grow-1">
+            <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+              <h6 class="fw-700 mb-0">{{ wish.title }}</h6>
+              {% if wish.priority == 'high' %}<span class="badge-priority prio-high">🔥 Очень хочу</span>
+              {% elif wish.priority == 'low' %}<span class="badge-priority prio-low">💭 Не срочно</span>
+              {% else %}<span class="badge-priority prio-medium">✨ Хочу</span>{% endif %}
+            </div>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              <span class="cat-chip">{{ category_map[wish.category].emoji }} {{ category_map[wish.category].label }}</span>
+              {% if wish.price %}<span class="fw-700" style="color:#6366f1">{{ '{:,.0f}'.format(wish.price).replace(',', ' ') }} ₽</span>{% endif %}
+              {% if wish.link %}<a href="{{ wish.link }}" target="_blank" class="text-muted" style="font-size:.82rem"><i class="bi bi-link-45deg"></i> ссылка</a>{% endif %}
+              {% if wish.booked_by_id %}
+              <span class="badge" style="background:#fef3c7;color:#d97706;font-size:.75rem"><i class="bi bi-lock-fill me-1"></i>Кто-то бронирует 🤫</span>
+              {% endif %}
+            </div>
+            {% if wish.description %}
+            <p class="text-muted mt-1 mb-0" style="font-size:.85rem">{{ wish.description[:120] }}{% if wish.description|length > 120 %}…{% endif %}</p>
+            {% endif %}
+          </div>
+          {% if not wish.booked_by_id %}
+          <form method="POST" action="{{ url_for('delete_wish', item_id=wish.id) }}" class="ms-2"
+                onsubmit="return confirm('Удалить «{{ wish.title }}»?')">
+            <button type="submit" class="btn btn-w btn-w-danger btn-sm" title="Удалить">
+              <i class="bi bi-trash3"></i>
+            </button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+
+  {% else %}
+  <div class="text-center py-5 card-w">
+    <div style="font-size:3.5rem">🌟</div>
+    <h5 class="fw-700 mt-3">Список пуст</h5>
+    <p class="text-muted">Добавь первое желание, и семья узнает, что тебе подарить!</p>
+  </div>
+  {% endif %}
+
+</div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+// Image preview fetch
+const fetchBtn = document.getElementById('fetchPreviewBtn');
+const linkInput = document.getElementById('linkInput');
+const imageUrlInput = document.getElementById('imageUrlInput');
+const imgPreview = document.getElementById('imgPreview');
+const previewImg = document.getElementById('previewImg');
+
+function updatePreview(url) {
+  if (url) {
+    previewImg.src = url;
+    imgPreview.style.display = 'block';
+  } else {
+    imgPreview.style.display = 'none';
+  }
+}
+
+imageUrlInput.addEventListener('input', () => updatePreview(imageUrlInput.value));
+
+fetchBtn.addEventListener('click', async () => {
+  const url = linkInput.value || imageUrlInput.value;
+  if (!url) return;
+  fetchBtn.innerHTML = '<i class="bi bi-hourglass-split"></i>';
+  try {
+    const r = await fetch('/api/fetch_preview', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({url})
+    });
+    const d = await r.json();
+    if (d.image_url) {
+      imageUrlInput.value = d.image_url;
+      updatePreview(d.image_url);
+    }
+  } catch(e) {}
+  fetchBtn.innerHTML = '<i class="bi bi-image me-1"></i> Найти';
+});
+
+// Category radio label styling
+document.querySelectorAll('.btn-check[name="category"]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    document.querySelectorAll('.cat-radio-label').forEach(l => l.classList.remove('btn-w-primary'));
+    if (radio.checked) {
+      document.querySelector('label[for="' + radio.id + '"]').classList.add('btn-w-primary');
+    }
+  });
+});
+// Init
+const checked = document.querySelector('.btn-check[name="category"]:checked');
+if (checked) document.querySelector('label[for="' + checked.id + '"]').classList.add('btn-w-primary');
+</script>
 {% endblock %}

@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="d-flex align-items-center gap-3 mb-4">
+  <a href="{{ url_for('index') }}" class="btn btn-w btn-w-light">
+    <i class="bi bi-arrow-left me-1"></i> На главную
+  </a>
+  <div>
+    <h3 class="fw-800 mb-0"><i class="bi bi-clock-history text-indigo me-2"></i>История подарков</h3>
+    <p class="text-muted mb-0" style="font-size:.85rem">Всё, что уже было вручено нашей семьёй</p>
+  </div>
+</div>
+
+{% if purchased %}
+
+<!-- Summary stats -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-4">
+    <div class="card-w p-3 text-center">
+      <div class="fw-800" style="font-size:2rem;color:#6366f1">{{ purchased|length }}</div>
+      <div class="text-muted" style="font-size:.85rem">Подарков вручено</div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="card-w p-3 text-center">
+      {% set gifters = purchased|map(attribute='booked_by')|unique(attribute='id')|list %}
+      <div class="fw-800" style="font-size:2rem;color:#10b981">{{ gifters|length }}</div>
+      <div class="text-muted" style="font-size:.85rem">Дарителей</div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="card-w p-3 text-center">
+      {% set total_price = purchased|selectattr('price')|map(attribute='price')|sum %}
+      <div class="fw-800" style="font-size:2rem;color:#f59e0b">
+        {{ '{:,.0f}'.format(total_price).replace(',', ' ') if total_price else '—' }}
+        {% if total_price %}<span style="font-size:1rem">₽</span>{% endif %}
+      </div>
+      <div class="text-muted" style="font-size:.85rem">Подарено на сумму</div>
+    </div>
+  </div>
+</div>
+
+<!-- Timeline -->
+<div class="row g-3">
+  {% for wish in purchased %}
+  <div class="col-md-6">
+    <div class="card-w overflow-hidden h-100">
+      <div class="d-flex h-100">
+        <!-- Category color bar -->
+        <div style="width:8px;flex-shrink:0;background:{{ category_map[wish.category].gradient }}"></div>
+        <div class="p-3 flex-grow-1">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <span class="cat-chip mb-1 d-inline-flex">{{ category_map[wish.category].emoji }} {{ category_map[wish.category].label }}</span>
+              <h6 class="fw-700 mb-0">{{ wish.title }}</h6>
+            </div>
+            {% if wish.price %}
+            <span class="fw-700 ms-2" style="color:#6366f1;white-space:nowrap">{{ '{:,.0f}'.format(wish.price).replace(',', ' ') }} ₽</span>
+            {% endif %}
+          </div>
+
+          <div class="d-flex align-items-center gap-2 flex-wrap" style="font-size:.82rem;color:#64748b">
+            <span>
+              <i class="bi bi-person-heart me-1"></i>
+              Получатель: <strong>{{ wish.owner.emoji }} {{ wish.owner.name }}</strong>
+            </span>
+          </div>
+          <div class="d-flex align-items-center gap-2 flex-wrap mt-1" style="font-size:.82rem;color:#64748b">
+            <span>
+              <i class="bi bi-gift-fill me-1" style="color:#10b981"></i>
+              Подарил: <strong>{{ wish.booked_by.emoji }} {{ wish.booked_by.name }}</strong>
+            </span>
+          </div>
+
+          {% if wish.purchased_at %}
+          <div class="mt-2" style="font-size:.78rem;color:#94a3b8">
+            <i class="bi bi-calendar-check me-1"></i>
+            {{ wish.purchased_at.strftime('%d.%m.%Y') }}
+          </div>
+          {% endif %}
+
+          <div class="mt-2">
+            <span class="badge" style="background:#dcfce7;color:#16a34a;font-size:.75rem;padding:4px 10px;border-radius:8px">
+              ✅ Вручено
+            </span>
+          </div>
+        </div>
+
+        {% if wish.image_url %}
+        <div style="width:80px;flex-shrink:0;background-image:url('{{ wish.image_url }}');background-size:cover;background-position:center;border-radius:0 16px 16px 0"></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% else %}
+<div class="text-center py-5 card-w">
+  <div style="font-size:4rem">🎁</div>
+  <h4 class="fw-700 mt-3">Пока ничего не вручено</h4>
+  <p class="text-muted">Как только первый подарок будет отмечен как вручённый, он появится здесь.</p>
+  <a href="{{ url_for('index') }}" class="btn btn-w btn-w-primary mt-2">
+    Посмотреть вишлисты
+  </a>
+</div>
+{% endif %}
+
+{% endblock %}

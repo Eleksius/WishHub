@@ -1,0 +1,13 @@
+{
+  "name": "WishHub — Семейный вишлист",
+  "short_name": "WishHub",
+  "description": "Семейный список желаний",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f1f5f9",
+  "theme_color": "#6366f1",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎁</text></svg>", "sizes": "192x192", "type": "image/svg+xml" }
+  ]
+}

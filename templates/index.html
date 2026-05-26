@@ -1,53 +1,99 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="row mb-5">
-    <div class="col-12">
-        <div class="card-modern border-0 p-3 bg-white">
-            <div class="card-body">
-                <h5 class="fw-bold mb-3 text-secondary d-flex align-items-center">
-                    <i class="bi bi-calendar3 text-primary me-2"></i> Предстоящие события в семье
-                </h5>
-                {% if events %}
-                    <div class="d-flex flex-wrap gap-3">
-                        {% for event in events %}
-                        <div class="p-3 rounded-4 bg-light flex-grow-1 border-start border-primary border-4 shadow-sm" style="min-width: 280px;">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <i class="bi {{ event.icon }} text-primary fs-5 me-2"></i>
-                                    <span class="fw-semibold">{{ event.text }}</span>
-                                </div>
-                                <span class="badge bg-primary rounded-pill py-2 px-3">
-                                    {% if event.days_left == 0 %}Сегодня!{% else %}через {{ event.days_left }} дн.{% endif %}
-                                </span>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <p class="text-muted mb-0"><i class="bi bi-emoji-smile me-1"></i> В ближайший месяц праздников нет. Время для спонтанных сюрпризов!</p>
-                {% endif %}
-            </div>
+
+<!-- Events banner -->
+{% if events %}
+<div class="mb-4">
+  <div class="card-w p-4">
+    <h6 class="fw-700 text-muted mb-3 d-flex align-items-center gap-2" style="font-size:.8rem;text-transform:uppercase;letter-spacing:.5px">
+      <i class="bi bi-calendar3 text-indigo"></i> Ближайшие события
+    </h6>
+    <div class="d-flex flex-wrap gap-3">
+      {% for ev in events %}
+      <div class="d-flex align-items-center gap-3 p-3 rounded-3 flex-grow-1"
+           style="background:{% if ev.days_left==0 %}linear-gradient(135deg,#fdf4ff,#ede9fe){% else %}#f8fafc{% endif %};min-width:240px;border-left:4px solid {% if ev.days_left==0 %}#8b5cf6{% else %}#6366f1{% endif %}">
+        <i class="bi {{ ev.icon }} fs-4" style="color:{% if ev.days_left==0 %}#8b5cf6{% else %}#6366f1{% endif %}"></i>
+        <div class="flex-grow-1">
+          <div class="fw-600">{{ ev.text }}</div>
+          <div class="text-muted" style="font-size:.82rem">{{ ev.date }}</div>
         </div>
+        <span class="badge rounded-pill px-3 py-2 fw-600"
+              style="background:{% if ev.days_left==0 %}#8b5cf6{% else %}#6366f1{% endif %};color:#fff;font-size:.8rem">
+          {% if ev.days_left == 0 %}🎉 Сегодня!{% else %}{{ ev.days_left }} дн.{% endif %}
+        </span>
+      </div>
+      {% endfor %}
     </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Heading -->
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div>
+    <h2 class="fw-800 mb-0">Привет, {{ current_user.emoji }} {{ current_user.name }}!</h2>
+    <p class="text-muted mb-0 mt-1">Выбери, кому хочешь сделать подарок</p>
+  </div>
+  <a href="{{ url_for('my_wishlist') }}" class="btn btn-w btn-w-primary">
+    <i class="bi bi-list-stars me-1"></i> Мой вишлист
+  </a>
 </div>
 
-<h3 class="fw-bold mb-4">Списки желаний семьи</h3>
-<div class="row">
-    {% for u in users %}
-    <div class="col-md-4 mb-4">
-        <div class="card-modern border-0 text-center p-4 position-relative">
-            <div class="card-body">
-                <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px; font-size: 2rem;">
-                    {{ u.emoji }}
-                </div>
-                <h4 class="fw-bold mb-1">{{ u.name }}</h4>
-                <p class="text-muted small mb-4">@{{ u.username }}</p>
-                <a href="{{ url_for('view_wishlist', user_id=u.id) }}" class="btn btn-primary btn-modern w-100 shadow-sm stretched-link">
-                    Открыть вишлист <i class="bi bi-arrow-right-short"></i>
-                </a>
-            </div>
+<!-- Family grid -->
+{% if users %}
+<div class="row g-4">
+  {% for u in users %}
+  {% set s = stats[u.id] %}
+  <div class="col-sm-6 col-lg-4">
+    <div class="card-w p-4 h-100 d-flex flex-col" style="flex-direction:column">
+      <!-- Avatar -->
+      <div class="text-center mb-3">
+        <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-2"
+             style="width:72px;height:72px;font-size:2.2rem;background:linear-gradient(135deg,#e0e7ff,#ede9fe)">
+          {{ u.emoji }}
         </div>
+        <h5 class="fw-700 mb-0">{{ u.name }}</h5>
+        <span class="text-muted" style="font-size:.85rem">@{{ u.username }}</span>
+        {% if u.birthday %}
+        <div class="mt-1">
+          <span class="badge rounded-pill px-2 py-1" style="background:#fdf4ff;color:#8b5cf6;font-size:.75rem">
+            <i class="bi bi-calendar-heart me-1"></i>{{ u.birthday.strftime('%d.%m') }}
+          </span>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Stats -->
+      <div class="mb-3 px-1">
+        <div class="d-flex justify-content-between mb-1">
+          <span class="text-muted" style="font-size:.82rem">Забронировано</span>
+          <span class="fw-600" style="font-size:.82rem">{{ s.booked }}/{{ s.total }}</span>
+        </div>
+        <div class="progress-w">
+          <div class="fill" style="width:{{ ((s.booked / s.total * 100) if s.total > 0 else 0)|int }}%"></div>
+        </div>
+        {% if s.total == 0 %}
+        <p class="text-muted text-center mt-2 mb-0" style="font-size:.8rem">Список пока пустой</p>
+        {% elif s.booked == s.total %}
+        <p class="text-success text-center mt-2 mb-0 fw-600" style="font-size:.8rem">✅ Все желания забронированы!</p>
+        {% else %}
+        <p class="text-muted text-center mt-2 mb-0" style="font-size:.8rem">{{ s.total - s.booked }} желан{{ 'ие' if (s.total-s.booked)==1 else 'ия' if (s.total-s.booked) in [2,3,4] else 'ий' }} ждут</p>
+        {% endif %}
+      </div>
+
+      <a href="{{ url_for('view_wishlist', user_id=u.id) }}" class="btn btn-w btn-w-primary w-100 mt-auto">
+        Открыть вишлист <i class="bi bi-arrow-right ms-1"></i>
+      </a>
     </div>
-    {% endfor %}
+  </div>
+  {% endfor %}
 </div>
+{% else %}
+<div class="text-center py-5 card-w">
+  <div style="font-size:4rem">👨‍👩‍👧‍👦</div>
+  <h4 class="fw-700 mt-3">Семья пока не добавлена</h4>
+  <p class="text-muted">Попроси администратора добавить остальных членов семьи</p>
+</div>
+{% endif %}
+
 {% endblock %}

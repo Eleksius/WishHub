@@ -1,113 +1,156 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WishHub</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WishHub 🎁</title>
+<link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+<meta name="theme-color" content="#6366f1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --indigo: #6366f1; --indigo-d: #4f46e5; --indigo-l: #e0e7ff;
+  --bg: #f1f5f9; --card: #fff; --text: #0f172a; --muted: #64748b;
+  --border: #e2e8f0; --shadow: 0 1px 3px rgba(0,0,0,.07), 0 4px 12px rgba(0,0,0,.04);
+  --shadow-lg: 0 8px 30px rgba(99,102,241,.12);
+  --radius: 16px; --radius-sm: 10px;
+}
+* { box-sizing: border-box; }
+body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
 
-    <style>
-        :root {
-            --primary-gradient: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-            --body-bg: #f8fafc;
-            --card-bg: #ffffff;
-            --text-main: #0f172a;
-        }
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--body-bg);
-            color: var(--text-main);
-        }
-        .navbar-custom {
-            background: var(--primary-gradient);
-            box-shadow: 0 4px 20px rgba(79, 70, 229, 0.15);
-            border-radius: 0 0 20px 20px;
-        }
-        .card-modern {
-            background: var(--card-bg);
-            border: none;
-            border-radius: 16px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-        }
-        .card-modern:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
-        .btn-modern {
-            border-radius: 12px;
-            padding: 10px 20px;
-            font-weight: 500;
-            transition: all 0.2s ease;
-        }
-        .form-control-modern {
-            border-radius: 12px;
-            padding: 12px;
-            border: 1px solid #e2e8f0;
-            background-color: #f8fafc;
-        }
-        .form-control-modern:focus {
-            background-color: #fff;
-            border-color: #6366f1;
-            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
-        }
-        .badge-priority {
-            border-radius: 8px;
-            padding: 6px 12px;
-            font-weight: 600;
-        }
-        /* Стиль для выбора эмодзи аватарок */
-        .emoji-label {
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .emoji-label:hover {
-            transform: scale(1.2);
-        }
-        .btn-check:checked + .emoji-label {
-            background-color: #fff !important;
-            box-shadow: 0 0 0 3px #6366f1 !important;
-            transform: scale(1.25);
-        }
-    </style>
+/* ── Navbar ── */
+.navbar-custom {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 60%, #4338ca 100%);
+  box-shadow: 0 4px 24px rgba(79,70,229,.25);
+}
+.navbar-brand { font-weight: 800; font-size: 1.3rem; letter-spacing: -.5px; }
+.nav-user-btn {
+  background: rgba(255,255,255,.15); backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,.25); border-radius: 12px;
+  color: #fff; padding: 7px 14px; font-weight: 600; text-decoration: none;
+  display: flex; align-items: center; gap: 8px; transition: all .2s;
+}
+.nav-user-btn:hover { background: rgba(255,255,255,.25); color: #fff; }
+.nav-link-logout { color: rgba(255,255,255,.7); text-decoration: none; font-size: .88rem; padding: 6px 10px; border-radius: 8px; transition: all .2s; }
+.nav-link-logout:hover { color: #fff; background: rgba(255,255,255,.1); }
+.nav-history-btn { color: rgba(255,255,255,.8); text-decoration: none; font-size: .88rem; padding: 6px 12px; border-radius: 8px; transition: all .2s; display: flex; align-items: center; gap: 5px; }
+.nav-history-btn:hover { color: #fff; background: rgba(255,255,255,.12); }
+
+/* ── Cards ── */
+.card-w {
+  background: var(--card); border: none; border-radius: var(--radius);
+  box-shadow: var(--shadow); transition: transform .25s, box-shadow .25s;
+}
+.card-w:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+
+/* ── Buttons ── */
+.btn-w { border-radius: 10px; font-weight: 600; padding: 9px 18px; transition: all .2s; border: none; }
+.btn-w-primary { background: linear-gradient(135deg,#6366f1,#4f46e5); color: #fff; box-shadow: 0 4px 12px rgba(99,102,241,.3); }
+.btn-w-primary:hover { color: #fff; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(99,102,241,.4); }
+.btn-w-light { background: #f1f5f9; color: #334155; }
+.btn-w-light:hover { background: #e2e8f0; color: #0f172a; }
+.btn-w-success { background: linear-gradient(135deg,#10b981,#059669); color: #fff; box-shadow: 0 4px 12px rgba(16,185,129,.25); }
+.btn-w-success:hover { color: #fff; transform: translateY(-1px); }
+.btn-w-danger { background: #fff0f0; color: #ef4444; }
+.btn-w-danger:hover { background: #fecaca; }
+
+/* ── Form ── */
+.input-w {
+  border-radius: var(--radius-sm); border: 1.5px solid var(--border);
+  background: #f8fafc; padding: 10px 14px; width: 100%;
+  font-family: inherit; font-size: .95rem; transition: all .2s; outline: none;
+}
+.input-w:focus { background: #fff; border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(99,102,241,.1); }
+label.lbl { font-weight: 600; font-size: .85rem; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 6px; display: block; }
+
+/* ── Badges ── */
+.badge-priority { border-radius: 8px; padding: 4px 10px; font-size: .75rem; font-weight: 700; }
+.prio-high { background: #fef2f2; color: #ef4444; }
+.prio-medium { background: #eff6ff; color: #3b82f6; }
+.prio-low { background: #f8fafc; color: #94a3b8; }
+
+/* ── Alerts ── */
+.alert { border: none; border-radius: var(--radius-sm); font-weight: 500; }
+
+/* ── Emoji picker ── */
+.emoji-label { cursor: pointer; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; background: #f1f5f9; transition: all .15s; }
+.emoji-label:hover { transform: scale(1.15); background: #e0e7ff; }
+.btn-check:checked + .emoji-label { background: #e0e7ff; box-shadow: 0 0 0 3px var(--indigo); transform: scale(1.2); }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+
+/* ── Category chip ── */
+.cat-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 8px; font-size: .78rem; font-weight: 600; background: #f1f5f9; color: #475569; }
+
+/* ── Progress bar ── */
+.progress-w { height: 6px; border-radius: 99px; background: #e2e8f0; overflow: hidden; }
+.progress-w .fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg,#6366f1,#06b6d4); transition: width .5s ease; }
+</style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom mb-4 py-3">
-        <div class="container">
-            <a class="navbar-brand fw-bold fs-4 d-flex align-items-center" href="{{ url_for('index') }}">
-                <i class="bi bi-gift-fill me-2"></i> WishHub
-            </a>
-            {% if current_user.is_authenticated %}
-            <div class="navbar-nav ms-auto d-flex align-items-center gap-2">
-                <a class="btn btn-light text-primary btn-modern d-flex align-items-center px-3 py-2 gap-2 shadow-sm" href="{{ url_for('my_wishlist') }}">
-                    <span style="font-size: 1.2rem; line-height: 1;">{{ current_user.emoji }}</span>
-                    <span class="fw-bold text-dark">{{ current_user.name }}</span>
-                </a>
-                <a class="nav-link text-white opacity-75 d-flex align-items-center ms-2" href="{{ url_for('logout') }}"><i class="bi bi-box-arrow-right me-1"></i> Выйти</a>
-            </div>
-            {% endif %}
-        </div>
-    </nav>
 
-    <div class="container pb-5">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show border-0 shadow-sm rounded-3 mb-4" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        {% block content %}{% endblock %}
+<nav class="navbar navbar-expand-lg navbar-custom py-2 mb-4">
+  <div class="container">
+    <a class="navbar-brand text-white d-flex align-items-center gap-2" href="{{ url_for('index') }}">
+      <i class="bi bi-gift-fill"></i> WishHub
+    </a>
+    {% if current_user.is_authenticated %}
+    <div class="d-flex align-items-center gap-2 ms-auto flex-wrap">
+      <a href="{{ url_for('history') }}" class="nav-history-btn">
+        <i class="bi bi-clock-history"></i><span class="d-none d-sm-inline">История</span>
+      </a>
+      <a href="{{ url_for('my_wishlist') }}" class="nav-user-btn">
+        <span style="font-size:1.1rem">{{ current_user.emoji }}</span>
+        <span>{{ current_user.name }}</span>
+      </a>
+      <form method="POST" action="{{ url_for('logout') }}" class="m-0">
+        <button type="submit" class="nav-link-logout border-0 bg-transparent cursor-pointer">
+          <i class="bi bi-box-arrow-right"></i>
+        </button>
+      </form>
     </div>
+    {% endif %}
+  </div>
+</nav>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<div class="container pb-5">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ 'danger' if category=='error' else category }} alert-dismissible fade show shadow-sm mb-3" role="alert">
+          {% if category=='success' %}<i class="bi bi-check-circle-fill me-2"></i>{% endif %}
+          {% if category=='danger' %}<i class="bi bi-exclamation-triangle-fill me-2"></i>{% endif %}
+          {% if category=='info' %}<i class="bi bi-info-circle-fill me-2"></i>{% endif %}
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/static/sw.js').catch(() => {});
+}
+// Confetti on purchase buttons
+document.querySelectorAll('.btn-purchase').forEach(btn => {
+  btn.addEventListener('click', () => {
+    confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 },
+               colors: ['#6366f1','#06b6d4','#10b981','#f59e0b','#ec4899'] });
+  });
+});
+</script>
+{% block scripts %}{% endblock %}
 </body>
 </html>
