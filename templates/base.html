@@ -146,14 +146,55 @@ if ('serviceWorker' in navigator) {
 </script>
 {% block scripts %}{% endblock %}
 <script>
-// Confetti — запускается последним, после всех скриптов страницы
-document.querySelectorAll('.btn-purchase').forEach(btn => {
-  btn.addEventListener('click', function(e) {
-    if (typeof confetti === 'function') {
-      confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 },
-                 colors: ['#6366f1','#06b6d4','#10b981','#f59e0b','#ec4899','#f43f5e'] });
+// ── Конфетти-пушка: два залпа с боков + финальный центральный взрыв ──────
+function launchCelebration() {
+  if (typeof confetti !== 'function') return;
+
+  const colors = ['#6366f1','#06b6d4','#10b981','#f59e0b','#ec4899','#f43f5e','#a855f7'];
+
+  // Непрерывный дождь в течение 3 секунд
+  const end = Date.now() + 3200;
+  let frame;
+
+  function fire(origin, angle, spread) {
+    confetti({
+      particleCount: 6,
+      angle,
+      spread,
+      origin,
+      colors,
+      startVelocity: 45,
+      gravity: 0.9,
+      scalar: 1.1,
+      ticks: 200,
+      drift: 0,
+    });
+  }
+
+  function loop() {
+    fire({ x: 0,    y: 0.65 }, 60,  55);
+    fire({ x: 1,    y: 0.65 }, 120, 55);
+    fire({ x: 0.5,  y: 0.55 }, 90,  80);
+    if (Date.now() < end) {
+      frame = requestAnimationFrame(loop);
+    } else {
+      // Финальный большой взрыв по центру
+      confetti({
+        particleCount: 180,
+        spread: 120,
+        origin: { x: 0.5, y: 0.5 },
+        colors,
+        startVelocity: 35,
+        scalar: 1.2,
+        ticks: 300,
+      });
     }
-  });
+  }
+  loop();
+}
+
+document.querySelectorAll('.btn-purchase').forEach(btn => {
+  btn.addEventListener('click', launchCelebration);
 });
 </script>
 </body>

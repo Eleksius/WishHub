@@ -234,20 +234,19 @@
 
   {% if wishes %}
   {% for wish in wishes %}
-  <div class="card-w mb-3 overflow-hidden">
+  <div class="card-w mb-3 overflow-hidden wish-item" style="animation: fadeSlideIn .35s ease both; animation-delay: {{ loop.index0 * 0.05 }}s">
     <div class="d-flex">
-      <!-- Color stripe or image -->
       {% if wish.image_url %}
-      <div style="width:100px;flex-shrink:0;background-image:url('{{ wish.image_url }}');background-size:cover;background-position:center"></div>
+      <div style="width:100px;flex-shrink:0;background-image:url('{{ wish.image_url }}');background-size:cover;background-position:center;border-radius:16px 0 0 16px"></div>
       {% else %}
-      <div style="width:10px;flex-shrink:0;background:{{ category_map[wish.category].gradient }}"></div>
+      <div style="width:8px;flex-shrink:0;background:{{ category_map[wish.category].gradient }};border-radius:16px 0 0 16px"></div>
       {% endif %}
 
-      <div class="p-3 flex-grow-1">
-        <div class="d-flex justify-content-between align-items-start">
-          <div class="flex-grow-1">
+      <div class="p-3 flex-grow-1 min-w-0">
+        <div class="d-flex justify-content-between align-items-start gap-2">
+          <div class="flex-grow-1 min-w-0">
             <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
-              <h6 class="fw-700 mb-0">{{ wish.title }}</h6>
+              <h6 class="fw-700 mb-0 text-truncate">{{ wish.title }}</h6>
               {% if wish.priority == 'high' %}<span class="badge-priority prio-high">🔥 Очень хочу</span>
               {% elif wish.priority == 'low' %}<span class="badge-priority prio-low">💭 Не срочно</span>
               {% else %}<span class="badge-priority prio-medium">✨ Хочу</span>{% endif %}
@@ -256,18 +255,19 @@
               <span class="cat-chip">{{ category_map[wish.category].emoji }} {{ category_map[wish.category].label }}</span>
               {% if wish.price %}<span class="fw-700" style="color:#6366f1">{{ '{:,.0f}'.format(wish.price).replace(',', ' ') }} ₽</span>{% endif %}
               {% if wish.link %}<a href="{{ wish.link }}" target="_blank" class="text-muted" style="font-size:.82rem"><i class="bi bi-link-45deg"></i> ссылка</a>{% endif %}
-              {# Владелец не видит кто бронирует — пусть будет сюрприз #}
             </div>
             {% if wish.description %}
             <p class="text-muted mt-1 mb-0" style="font-size:.85rem">{{ wish.description[:120] }}{% if wish.description|length > 120 %}…{% endif %}</p>
             {% endif %}
           </div>
-          <form method="POST" action="{{ url_for('delete_wish', item_id=wish.id) }}" class="ms-2"
-                onsubmit="return confirm('Удалить «{{ wish.title }}»?')">
-            <button type="submit" class="btn btn-w btn-w-danger btn-sm" title="Удалить">
-              <i class="bi bi-trash3"></i>
-            </button>
-          </form>
+          <!-- Красивая кнопка удаления через модал -->
+          <button class="btn btn-w btn-w-danger btn-sm flex-shrink-0 btn-delete-wish"
+                  data-id="{{ wish.id }}"
+                  data-title="{{ wish.title }}"
+                  data-action="{{ url_for('delete_wish', item_id=wish.id) }}"
+                  title="Удалить">
+            <i class="bi bi-trash3"></i>
+          </button>
         </div>
       </div>
     </div>
@@ -282,13 +282,50 @@
   </div>
   {% endif %}
 
+<!-- ── Красивый модал подтверждения удаления ── -->
+<div id="deleteModal" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center">
+  <!-- Backdrop -->
+  <div id="deleteBackdrop"
+       style="position:absolute;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(4px);opacity:0;transition:opacity .25s"></div>
+  <!-- Dialog -->
+  <div id="deleteDialog"
+       style="position:relative;background:#fff;border-radius:20px;padding:2rem;max-width:380px;width:90%;
+              box-shadow:0 24px 64px rgba(15,23,42,.2);transform:scale(.92) translateY(12px);
+              opacity:0;transition:all .25s cubic-bezier(.34,1.56,.64,1);text-align:center">
+    <div style="font-size:3rem;margin-bottom:.75rem">🗑️</div>
+    <h5 class="fw-800 mb-1">Удалить желание?</h5>
+    <p id="deleteModalTitle" class="text-muted mb-4" style="font-size:.9rem;line-height:1.5"></p>
+    <p class="mb-4 rounded-3 py-2 px-3" style="background:#fff7ed;color:#c2410c;font-size:.82rem;font-weight:600">
+      <i class="bi bi-exclamation-triangle-fill me-1"></i>
+      Если кто-то уже бронировал этот подарок, бронь сбросится
+    </p>
+    <div class="d-flex gap-3">
+      <button id="deleteCancelBtn" class="btn btn-w btn-w-light flex-grow-1" style="padding:12px">
+        Отмена
+      </button>
+      <form id="deleteForm" method="POST" class="flex-grow-1">
+        <button type="submit" class="btn btn-w w-100" style="padding:12px;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;box-shadow:0 4px 12px rgba(239,68,68,.3)">
+          <i class="bi bi-trash3 me-1"></i> Удалить
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
 </div>
 </div>
 
 {% endblock %}
 {% block scripts %}
+<style>
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.wish-item { will-change: transform, opacity; }
+</style>
 <script>
-// Image preview fetch
+// ── Image preview fetch ──────────────────────────────────────────
 const fetchBtn = document.getElementById('fetchPreviewBtn');
 const linkInput = document.getElementById('linkInput');
 const imageUrlInput = document.getElementById('imageUrlInput');
@@ -296,71 +333,79 @@ const imgPreview = document.getElementById('imgPreview');
 const previewImg = document.getElementById('previewImg');
 
 function updatePreview(url) {
-  if (url) {
-    previewImg.src = url;
-    imgPreview.style.display = 'block';
-  } else {
-    imgPreview.style.display = 'none';
-  }
+  if (url) { previewImg.src = url; imgPreview.style.display = 'block'; }
+  else { imgPreview.style.display = 'none'; }
 }
-
 imageUrlInput.addEventListener('input', () => updatePreview(imageUrlInput.value));
-
 fetchBtn.addEventListener('click', async () => {
   const url = linkInput.value || imageUrlInput.value;
   if (!url) return;
   fetchBtn.innerHTML = '<i class="bi bi-hourglass-split"></i>';
   try {
     const r = await fetch('/api/fetch_preview', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({url})
     });
     const d = await r.json();
-    if (d.image_url) {
-      imageUrlInput.value = d.image_url;
-      updatePreview(d.image_url);
-    }
+    if (d.image_url) { imageUrlInput.value = d.image_url; updatePreview(d.image_url); }
   } catch(e) {}
   fetchBtn.innerHTML = '<i class="bi bi-image me-1"></i> Найти';
 });
 
-// Category radio label styling
-document.querySelectorAll('.btn-check[name="category"]').forEach(radio => {
-  radio.addEventListener('change', () => {
-    document.querySelectorAll('.cat-radio-label').forEach(l => {
-      l.classList.remove('btn-w-primary'); l.classList.add('btn-w-light');
+// ── Radio button styling (category + priority) ───────────────────
+function initRadioStyle(name, labelClass) {
+  const radios = document.querySelectorAll(`.btn-check[name="${name}"]`);
+  radios.forEach(radio => {
+    radio.addEventListener('change', () => {
+      document.querySelectorAll(`.${labelClass}`).forEach(l => {
+        l.classList.remove('btn-w-primary'); l.classList.add('btn-w-light');
+      });
+      if (radio.checked) {
+        const lbl = document.querySelector(`label[for="${radio.id}"]`);
+        lbl.classList.add('btn-w-primary'); lbl.classList.remove('btn-w-light');
+      }
     });
-    if (radio.checked) {
-      const lbl = document.querySelector('label[for="' + radio.id + '"]');
-      lbl.classList.add('btn-w-primary'); lbl.classList.remove('btn-w-light');
-    }
   });
-});
-// Init category
-const checked = document.querySelector('.btn-check[name="category"]:checked');
-if (checked) {
-  const lbl = document.querySelector('label[for="' + checked.id + '"]');
-  lbl.classList.add('btn-w-primary'); lbl.classList.remove('btn-w-light');
+  const init = document.querySelector(`.btn-check[name="${name}"]:checked`);
+  if (init) {
+    const lbl = document.querySelector(`label[for="${init.id}"]`);
+    lbl.classList.add('btn-w-primary'); lbl.classList.remove('btn-w-light');
+  }
+}
+initRadioStyle('category', 'cat-radio-label');
+initRadioStyle('priority', 'prio-radio-label');
+
+// ── Красивый модал удаления ──────────────────────────────────────
+const modal     = document.getElementById('deleteModal');
+const backdrop  = document.getElementById('deleteBackdrop');
+const dialog    = document.getElementById('deleteDialog');
+const titleEl   = document.getElementById('deleteModalTitle');
+const deleteForm = document.getElementById('deleteForm');
+const cancelBtn = document.getElementById('deleteCancelBtn');
+
+function openDeleteModal(title, action) {
+  titleEl.textContent = `«${title}»`;
+  deleteForm.action = action;
+  modal.style.display = 'flex';
+  requestAnimationFrame(() => {
+    backdrop.style.opacity = '1';
+    dialog.style.opacity = '1';
+    dialog.style.transform = 'scale(1) translateY(0)';
+  });
 }
 
-// Priority radio label styling
-document.querySelectorAll('.btn-check[name="priority"]').forEach(radio => {
-  radio.addEventListener('change', () => {
-    document.querySelectorAll('.prio-radio-label').forEach(l => {
-      l.classList.remove('btn-w-primary'); l.classList.add('btn-w-light');
-    });
-    if (radio.checked) {
-      const lbl = document.querySelector('label[for="' + radio.id + '"]');
-      lbl.classList.add('btn-w-primary'); lbl.classList.remove('btn-w-light');
-    }
-  });
-});
-// Init priority
-const checkedP = document.querySelector('.btn-check[name="priority"]:checked');
-if (checkedP) {
-  const lbl = document.querySelector('label[for="' + checkedP.id + '"]');
-  lbl.classList.add('btn-w-primary'); lbl.classList.remove('btn-w-light');
+function closeDeleteModal() {
+  backdrop.style.opacity = '0';
+  dialog.style.opacity = '0';
+  dialog.style.transform = 'scale(.92) translateY(12px)';
+  setTimeout(() => { modal.style.display = 'none'; }, 250);
 }
+
+document.querySelectorAll('.btn-delete-wish').forEach(btn => {
+  btn.addEventListener('click', () => openDeleteModal(btn.dataset.title, btn.dataset.action));
+});
+cancelBtn.addEventListener('click', closeDeleteModal);
+backdrop.addEventListener('click', closeDeleteModal);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDeleteModal(); });
 </script>
 {% endblock %}
