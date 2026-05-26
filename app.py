@@ -290,12 +290,10 @@ def create_user():
 @login_required
 def delete_wish(item_id):
     item = db.session.get(WishItem, item_id)
-    if item and item.user_id == current_user.id and not item.booked_by_id:
+    if item and item.user_id == current_user.id:
         db.session.delete(item)
         db.session.commit()
         flash('Желание удалено.', 'info')
-    elif item and item.booked_by_id:
-        flash('Нельзя удалить — кто-то уже бронирует этот подарок! 🎁', 'warning')
     return redirect(url_for('my_wishlist'))
 
 @app.route('/user/<int:user_id>')

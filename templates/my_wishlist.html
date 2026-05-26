@@ -262,14 +262,12 @@
             <p class="text-muted mt-1 mb-0" style="font-size:.85rem">{{ wish.description[:120] }}{% if wish.description|length > 120 %}…{% endif %}</p>
             {% endif %}
           </div>
-          {% if not wish.booked_by_id %}
           <form method="POST" action="{{ url_for('delete_wish', item_id=wish.id) }}" class="ms-2"
                 onsubmit="return confirm('Удалить «{{ wish.title }}»?')">
             <button type="submit" class="btn btn-w btn-w-danger btn-sm" title="Удалить">
               <i class="bi bi-trash3"></i>
             </button>
           </form>
-          {% endif %}
         </div>
       </div>
     </div>
