@@ -277,31 +277,37 @@
   <div class="card-w mb-3 overflow-hidden wish-item" style="animation: fadeSlideIn .35s ease both; animation-delay: {{ loop.index0 * 0.05 }}s">
     <div class="d-flex">
       {% if wish.image_url %}
-      <div style="width:100px;flex-shrink:0;background-image:url('{{ wish.image_url }}');background-size:cover;background-position:center;border-radius:16px 0 0 16px"></div>
+      <div style="width:90px;flex-shrink:0;background-image:url('{{ wish.image_url }}');background-size:cover;background-position:center;border-radius:16px 0 0 16px"></div>
       {% else %}
-      <div style="width:8px;flex-shrink:0;background:{{ category_map[wish.category].gradient }};border-radius:16px 0 0 16px"></div>
+      <div style="width:6px;flex-shrink:0;background:{{ category_map[wish.category].gradient }};border-radius:16px 0 0 16px"></div>
       {% endif %}
 
-      <div class="p-3 flex-grow-1 min-w-0">
-        <div class="d-flex justify-content-between align-items-start gap-2">
-          <div class="flex-grow-1 min-w-0">
-            <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
-              <h6 class="fw-700 mb-0 text-truncate">{{ wish.title }}</h6>
+      <div class="p-3 flex-grow-1" style="min-width:0">
+
+        <!-- Заголовок + кнопки в одной строке -->
+        <div class="d-flex align-items-start gap-2">
+          <div style="min-width:0;flex:1">
+            <!-- Приоритет -->
+            <div class="mb-1">
               {% if wish.priority == 'high' %}<span class="badge-priority prio-high">🔥 Очень хочу</span>
               {% elif wish.priority == 'low' %}<span class="badge-priority prio-low">💭 Не срочно</span>
               {% else %}<span class="badge-priority prio-medium">✨ Хочу</span>{% endif %}
             </div>
+            <!-- Название — разрешаем перенос слов -->
+            <h6 class="fw-700 mb-1" style="word-break:break-word;overflow-wrap:anywhere;line-height:1.35">{{ wish.title }}</h6>
+            <!-- Категория, цена, ссылка -->
             <div class="d-flex align-items-center gap-2 flex-wrap">
               <span class="cat-chip">{{ category_map[wish.category].emoji }} {{ category_map[wish.category].label }}</span>
-              {% if wish.price %}<span class="fw-700" style="color:#6366f1">{{ '{:,.0f}'.format(wish.price).replace(',', ' ') }} ₽</span>{% endif %}
+              {% if wish.price %}<span class="fw-700" style="color:#6366f1;font-size:.9rem">{{ '{:,.0f}'.format(wish.price).replace(',', ' ') }} ₽</span>{% endif %}
               {% if wish.link %}<a href="{{ wish.link }}" target="_blank" class="text-muted" style="font-size:.82rem"><i class="bi bi-link-45deg"></i> ссылка</a>{% endif %}
             </div>
             {% if wish.description %}
-            <p class="text-muted mt-1 mb-0" style="font-size:.85rem">{{ wish.description[:120] }}{% if wish.description|length > 120 %}…{% endif %}</p>
+            <p class="text-muted mt-1 mb-0" style="font-size:.85rem;word-break:break-word;overflow-wrap:anywhere">{{ wish.description[:120] }}{% if wish.description|length > 120 %}…{% endif %}</p>
             {% endif %}
           </div>
-          <!-- Кнопки редактирования и удаления -->
-          <div class="d-flex flex-column gap-1 flex-shrink-0">
+
+          <!-- Кнопки — всегда справа, не сжимаются -->
+          <div class="d-flex flex-column gap-1" style="flex-shrink:0">
             <button class="btn btn-w btn-w-light btn-sm btn-edit-wish"
                     data-id="{{ wish.id }}"
                     data-title="{{ wish.title|e }}"
@@ -312,18 +318,21 @@
                     data-category="{{ wish.category }}"
                     data-priority="{{ wish.priority }}"
                     data-action="{{ url_for('edit_wish', item_id=wish.id) }}"
-                    title="Редактировать">
+                    title="Редактировать"
+                    style="width:36px;height:36px;padding:0;display:flex;align-items:center;justify-content:center">
               <i class="bi bi-pencil"></i>
             </button>
             <button class="btn btn-w btn-w-danger btn-sm btn-delete-wish"
                     data-id="{{ wish.id }}"
                     data-title="{{ wish.title }}"
                     data-action="{{ url_for('delete_wish', item_id=wish.id) }}"
-                    title="Удалить">
+                    title="Удалить"
+                    style="width:36px;height:36px;padding:0;display:flex;align-items:center;justify-content:center">
               <i class="bi bi-trash3"></i>
             </button>
           </div>
         </div>
+
       </div>
     </div>
   </div>

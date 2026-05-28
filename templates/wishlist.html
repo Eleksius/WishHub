@@ -79,9 +79,9 @@
           {% endif %}
         </div>
 
-        <h5 class="fw-700 mb-1">{{ wish.title }}</h5>
+        <h5 class="fw-700 mb-1" style="word-break:break-word;overflow-wrap:anywhere">{{ wish.title }}</h5>
         {% if wish.description %}
-        <p class="text-muted mb-2" style="font-size:.9rem;line-height:1.5">{{ wish.description }}</p>
+        <p class="text-muted mb-2" style="font-size:.9rem;line-height:1.5;word-break:break-word;overflow-wrap:anywhere">{{ wish.description }}</p>
         {% endif %}
 
         <!-- Price + link -->
