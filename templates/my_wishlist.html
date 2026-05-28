@@ -300,14 +300,29 @@
             <p class="text-muted mt-1 mb-0" style="font-size:.85rem">{{ wish.description[:120] }}{% if wish.description|length > 120 %}…{% endif %}</p>
             {% endif %}
           </div>
-          <!-- Красивая кнопка удаления через модал -->
-          <button class="btn btn-w btn-w-danger btn-sm flex-shrink-0 btn-delete-wish"
-                  data-id="{{ wish.id }}"
-                  data-title="{{ wish.title }}"
-                  data-action="{{ url_for('delete_wish', item_id=wish.id) }}"
-                  title="Удалить">
-            <i class="bi bi-trash3"></i>
-          </button>
+          <!-- Кнопки редактирования и удаления -->
+          <div class="d-flex flex-column gap-1 flex-shrink-0">
+            <button class="btn btn-w btn-w-light btn-sm btn-edit-wish"
+                    data-id="{{ wish.id }}"
+                    data-title="{{ wish.title|e }}"
+                    data-description="{{ wish.description|e if wish.description else '' }}"
+                    data-link="{{ wish.link if wish.link else '' }}"
+                    data-price="{{ wish.price|int if wish.price else '' }}"
+                    data-image-url="{{ wish.image_url if wish.image_url else '' }}"
+                    data-category="{{ wish.category }}"
+                    data-priority="{{ wish.priority }}"
+                    data-action="{{ url_for('edit_wish', item_id=wish.id) }}"
+                    title="Редактировать">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-w btn-w-danger btn-sm btn-delete-wish"
+                    data-id="{{ wish.id }}"
+                    data-title="{{ wish.title }}"
+                    data-action="{{ url_for('delete_wish', item_id=wish.id) }}"
+                    title="Удалить">
+              <i class="bi bi-trash3"></i>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -352,6 +367,73 @@
   </div>
 </div>
 
+<!-- ── Модал редактирования желания ── -->
+<div id="editModal" style="display:none;position:fixed;inset:0;z-index:9998;align-items:flex-start;justify-content:center;overflow-y:auto;padding:2rem 0">
+  <div id="editBackdrop"
+       style="position:fixed;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(4px);opacity:0;transition:opacity .25s"></div>
+  <div id="editDialog"
+       style="position:relative;background:#fff;border-radius:20px;padding:1.75rem;max-width:480px;width:95%;margin:auto;
+              box-shadow:0 24px 64px rgba(15,23,42,.2);transform:scale(.92) translateY(12px);
+              opacity:0;transition:all .25s cubic-bezier(.34,1.56,.64,1)">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+      <h5 class="fw-800 mb-0">✏️ Редактировать желание</h5>
+      <button id="editCloseBtn" type="button" class="btn p-1 border-0 bg-transparent text-muted" style="font-size:1.2rem"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <form id="editForm" method="POST" action="">
+      <div class="mb-3">
+        <label class="lbl">Название *</label>
+        <input type="text" name="title" id="editTitle" class="input-w" required maxlength="100">
+      </div>
+      <div class="mb-3">
+        <label class="lbl">Описание</label>
+        <textarea name="description" id="editDescription" class="input-w" rows="2" maxlength="1000" style="resize:vertical"></textarea>
+      </div>
+      <div class="row g-2 mb-3">
+        <div class="col-8">
+          <label class="lbl">Ссылка на товар</label>
+          <input type="url" name="link" id="editLink" class="input-w" maxlength="500">
+        </div>
+        <div class="col-4">
+          <label class="lbl">Цена (₽)</label>
+          <input type="text" name="price" id="editPrice" class="input-w">
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="lbl">Картинка (URL)</label>
+        <input type="url" name="image_url" id="editImageUrl" class="input-w" maxlength="500">
+      </div>
+      <div class="mb-3">
+        <label class="lbl">Категория</label>
+        <div class="d-flex flex-wrap gap-2">
+          {% for key, emoji, label, grad in categories %}
+          <input type="radio" class="btn-check" name="category" id="ecat_{{ key }}" value="{{ key }}">
+          <label for="ecat_{{ key }}" class="btn btn-w btn-w-light btn-sm ecat-radio-label" style="border-radius:10px;gap:4px">
+            {{ emoji }} {{ label }}
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="mb-4">
+        <label class="lbl">Приоритет</label>
+        <div class="d-flex gap-2 flex-wrap">
+          <input type="radio" class="btn-check" name="priority" id="ep_high" value="high">
+          <label for="ep_high" class="btn btn-w btn-w-light btn-sm eprio-radio-label">🔥 Очень хочу</label>
+          <input type="radio" class="btn-check" name="priority" id="ep_medium" value="medium">
+          <label for="ep_medium" class="btn btn-w btn-w-light btn-sm eprio-radio-label">✨ Хочу</label>
+          <input type="radio" class="btn-check" name="priority" id="ep_low" value="low">
+          <label for="ep_low" class="btn btn-w btn-w-light btn-sm eprio-radio-label">💭 Не срочно</label>
+        </div>
+      </div>
+      <div class="d-flex gap-3">
+        <button type="button" id="editCancelBtn" class="btn btn-w btn-w-light flex-grow-1" style="padding:12px">Отмена</button>
+        <button type="submit" class="btn btn-w btn-w-primary flex-grow-1" style="padding:12px">
+          <i class="bi bi-check-lg me-1"></i> Сохранить
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
 </div>
 </div>
 
@@ -363,6 +445,17 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 .wish-item { will-change: transform, opacity; }
+
+/* ── Мобильная адаптация карточек ── */
+@media (max-width: 575px) {
+  .wish-item .badge-priority { font-size: .65rem; padding: 3px 7px; white-space: nowrap; }
+  .wish-item .cat-chip       { font-size: .7rem;  padding: 3px 7px; }
+  .wish-item h6              { font-size: .85rem; }
+  .wish-item .fw-700[style*="color:#6366f1"] { font-size: .82rem; }
+  .wish-item a[style*="font-size:.82rem"]    { font-size: .75rem; }
+  /* Изображение чуть меньше на мобиле */
+  .wish-item [style*="width:100px"] { width: 80px !important; }
+}
 </style>
 <script>
 // ── Image preview fetch ──────────────────────────────────────────
@@ -483,6 +576,71 @@ function confirmDeleteUser(userId, userName) {
 
 cancelBtn.addEventListener('click', closeDeleteModal);
 backdrop.addEventListener('click', closeDeleteModal);
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDeleteModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeDeleteModal(); closeEditModal(); } });
+
+// ── Модал редактирования ─────────────────────────────────────────
+const editModal    = document.getElementById('editModal');
+const editBackdrop = document.getElementById('editBackdrop');
+const editDialog   = document.getElementById('editDialog');
+const editForm     = document.getElementById('editForm');
+const editCancelBtn = document.getElementById('editCancelBtn');
+const editCloseBtn  = document.getElementById('editCloseBtn');
+
+function openEditModal(btn) {
+  // Заполняем поля
+  editForm.action                               = btn.dataset.action;
+  document.getElementById('editTitle').value       = btn.dataset.title;
+  document.getElementById('editDescription').value = btn.dataset.description;
+  document.getElementById('editLink').value        = btn.dataset.link;
+  document.getElementById('editPrice').value       = btn.dataset.price;
+  document.getElementById('editImageUrl').value    = btn.dataset.imageUrl;
+
+  // Категория
+  const catRadio = document.querySelector(`#editModal input[name="category"][value="${btn.dataset.category}"]`);
+  if (catRadio) { catRadio.checked = true; syncRadioLabels('ecat-radio-label', 'category', editModal); }
+
+  // Приоритет
+  const prioRadio = document.querySelector(`#editModal input[name="priority"][value="${btn.dataset.priority}"]`);
+  if (prioRadio) { prioRadio.checked = true; syncRadioLabels('eprio-radio-label', 'priority', editModal); }
+
+  editModal.style.display = 'flex';
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    editBackdrop.style.opacity = '1';
+    editDialog.style.opacity   = '1';
+    editDialog.style.transform = 'scale(1) translateY(0)';
+  }));
+  document.getElementById('editTitle').focus();
+}
+
+function closeEditModal() {
+  editBackdrop.style.opacity = '0';
+  editDialog.style.opacity   = '0';
+  editDialog.style.transform = 'scale(.92) translateY(12px)';
+  setTimeout(() => { editModal.style.display = 'none'; }, 250);
+}
+
+function syncRadioLabels(labelClass, radioName, scope) {
+  scope.querySelectorAll(`.${labelClass}`).forEach(l => {
+    l.classList.remove('btn-w-primary'); l.classList.add('btn-w-light');
+  });
+  const checked = scope.querySelector(`input[name="${radioName}"]:checked`);
+  if (checked) {
+    const lbl = scope.querySelector(`label[for="${checked.id}"]`);
+    if (lbl) { lbl.classList.add('btn-w-primary'); lbl.classList.remove('btn-w-light'); }
+  }
+}
+
+// Обновляем стили при клике внутри модала
+editModal.querySelectorAll('input[name="category"]').forEach(r =>
+  r.addEventListener('change', () => syncRadioLabels('ecat-radio-label', 'category', editModal)));
+editModal.querySelectorAll('input[name="priority"]').forEach(r =>
+  r.addEventListener('change', () => syncRadioLabels('eprio-radio-label', 'priority', editModal)));
+
+document.querySelectorAll('.btn-edit-wish').forEach(btn =>
+  btn.addEventListener('click', () => openEditModal(btn)));
+
+editCancelBtn.addEventListener('click', closeEditModal);
+editCloseBtn.addEventListener('click', closeEditModal);
+editBackdrop.addEventListener('click', closeEditModal);
 </script>
 {% endblock %}

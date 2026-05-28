@@ -496,6 +496,33 @@ def delete_wish(item_id):
         flash('Желание удалено.', 'info')
     return redirect(url_for('my_wishlist'))
 
+@app.route('/edit_wish/<int:item_id>', methods=['POST'])
+@login_required
+def edit_wish(item_id):
+    item = db.session.get(WishItem, item_id)
+    if not item or item.user_id != current_user.id:
+        abort(403)
+    title = request.form.get('title', '').strip()[:100]
+    if not title:
+        flash('Название обязательно!', 'danger')
+        return redirect(url_for('my_wishlist'))
+    item.title       = title
+    item.description = request.form.get('description', '').strip()[:1000]
+    item.link        = request.form.get('link', '').strip()[:500]
+    item.image_url   = request.form.get('image_url', '').strip()[:500]
+    item.category    = request.form.get('category', 'other')
+    item.priority    = request.form.get('priority', 'medium')
+    price_str = request.form.get('price', '').strip().replace(',', '.').replace(' ', '')
+    item.price = None
+    if price_str:
+        try:
+            item.price = float(price_str)
+        except ValueError:
+            pass
+    db.session.commit()
+    flash('Желание обновлено! ✏️', 'success')
+    return redirect(url_for('my_wishlist'))
+
 @app.route('/user/<int:user_id>')
 @login_required
 def view_wishlist(user_id):
