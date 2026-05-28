@@ -28,17 +28,30 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
   box-shadow: 0 4px 24px rgba(79,70,229,.25);
 }
 .navbar-brand { font-weight: 800; font-size: 1.3rem; letter-spacing: -.5px; }
-.nav-user-btn {
-  background: rgba(255,255,255,.15); backdrop-filter: blur(8px);
-  border: 1px solid rgba(255,255,255,.25); border-radius: 12px;
-  color: #fff; padding: 7px 14px; font-weight: 600; text-decoration: none;
-  display: flex; align-items: center; gap: 8px; transition: all .2s;
+/* ── Единый стиль для всех кнопок навбара ── */
+.nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid rgba(255,255,255,.25); border-radius: 10px;
+  padding: 7px 12px; font-size: .88rem; font-weight: 500;
+  color: rgba(255,255,255,.85); text-decoration: none;
+  background: rgba(255,255,255,.1); backdrop-filter: blur(6px);
+  transition: all .2s; white-space: nowrap;
+  cursor: pointer;
 }
-.nav-user-btn:hover { background: rgba(255,255,255,.25); color: #fff; }
-.nav-link-logout { color: rgba(255,255,255,.7); text-decoration: none; font-size: .88rem; padding: 6px 10px; border-radius: 8px; transition: all .2s; }
-.nav-link-logout:hover { color: #fff; background: rgba(255,255,255,.1); }
-.nav-history-btn { color: rgba(255,255,255,.8); text-decoration: none; font-size: .88rem; padding: 6px 12px; border-radius: 8px; transition: all .2s; display: flex; align-items: center; gap: 5px; }
-.nav-history-btn:hover { color: #fff; background: rgba(255,255,255,.12); }
+.nav-btn:hover { background: rgba(255,255,255,.2); color: #fff; border-color: rgba(255,255,255,.45); }
+/* Акцентная кнопка пользователя */
+.nav-btn-user {
+  background: rgba(255,255,255,.18); font-weight: 600;
+  border-color: rgba(255,255,255,.35);
+}
+.nav-btn-user:hover { background: rgba(255,255,255,.28); }
+/* Алиасы для обратной совместимости */
+.nav-user-btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(255,255,255,.35); border-radius: 10px; padding: 7px 12px; font-weight: 600; color: #fff; text-decoration: none; background: rgba(255,255,255,.18); backdrop-filter: blur(6px); transition: all .2s; }
+.nav-user-btn:hover { background: rgba(255,255,255,.28); color: #fff; }
+.nav-link-logout { display: inline-flex; align-items: center; border: 1px solid rgba(255,255,255,.25); border-radius: 10px; padding: 7px 10px; color: rgba(255,255,255,.85); background: rgba(255,255,255,.1); text-decoration: none; transition: all .2s; font-size:.88rem; }
+.nav-link-logout:hover { background: rgba(255,255,255,.2); color: #fff; border-color: rgba(255,255,255,.45); }
+.nav-history-btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(255,255,255,.25); border-radius: 10px; padding: 7px 12px; color: rgba(255,255,255,.85); background: rgba(255,255,255,.1); text-decoration: none; font-size: .88rem; font-weight: 500; transition: all .2s; }
+.nav-history-btn:hover { background: rgba(255,255,255,.2); color: #fff; border-color: rgba(255,255,255,.45); }
 
 /* ── Cards ── */
 .card-w {
@@ -106,12 +119,50 @@ label.lbl { font-weight: 600; font-size: .85rem; color: var(--muted); text-trans
       <a href="{{ url_for('history') }}" class="nav-history-btn">
         <i class="bi bi-clock-history"></i><span class="d-none d-sm-inline">История</span>
       </a>
+
+      <!-- 🔔 Bell уведомления -->
+      <div class="position-relative" id="bellWrapper" style="display:none">
+        <button id="bellBtn" type="button"
+                class="nav-history-btn position-relative"
+                title="Уведомления">
+          <i class="bi bi-bell-fill"></i>
+          <span id="bellBadge"
+                style="display:none;position:absolute;top:-4px;right:-4px;
+                       background:#ef4444;color:#fff;font-size:.6rem;font-weight:700;
+                       border-radius:99px;padding:1px 5px;min-width:16px;text-align:center;
+                       border:2px solid #6366f1">0</span>
+        </button>
+        <!-- Dropdown -->
+        <div id="bellDropdown"
+             style="display:none;position:absolute;top:calc(100% + 10px);right:0;
+                    width:290px;background:#fff;border-radius:16px;
+                    box-shadow:0 8px 32px rgba(15,23,42,.18);z-index:2000;
+                    overflow:hidden;max-height:380px;overflow-y:auto">
+          <div style="padding:12px 16px;font-weight:700;font-size:.8rem;
+                      color:#334155;background:#f8fafc;border-bottom:1px solid #e2e8f0;
+                      text-transform:uppercase;letter-spacing:.4px">
+            🔔 Ближайшие события
+          </div>
+          <div id="bellList"></div>
+          <div id="bellEmpty" style="display:none;padding:20px 16px;text-align:center;color:#94a3b8;font-size:.85rem">
+            Событий в ближайшие 30 дней нет
+          </div>
+          <!-- Кнопка разрешить уведомления (показывается если нет прав) -->
+          <div id="bellPermRow" style="display:none;padding:10px 12px;border-top:1px solid #f1f5f9;background:#f8fafc">
+            <button id="bellPermBtn" type="button"
+                    class="btn btn-w btn-w-primary w-100" style="font-size:.8rem;padding:7px">
+              <i class="bi bi-bell me-1"></i> Включить уведомления
+            </button>
+          </div>
+        </div>
+      </div>
+
       <a href="{{ url_for('my_wishlist') }}" class="nav-user-btn">
         <span style="font-size:1.1rem">{{ current_user.emoji }}</span>
         <span>{{ current_user.name }}</span>
       </a>
       <form method="POST" action="{{ url_for('logout') }}" class="m-0">
-        <button type="submit" class="nav-link-logout border-0 bg-transparent cursor-pointer">
+        <button type="submit" class="nav-link-logout border-0 bg-transparent" style="background: rgba(255,255,255,.1) !important; border: 1px solid rgba(255,255,255,.25) !important; cursor: pointer;">
           <i class="bi bi-box-arrow-right"></i>
         </button>
       </form>
@@ -144,6 +195,153 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/static/sw.js').catch(() => {});
 }
 </script>
+
+{% if current_user.is_authenticated %}
+<script>
+// ════════════════════════════════════════════════════════════════
+//  WishHub · Система уведомлений
+// ════════════════════════════════════════════════════════════════
+(async function () {
+  // ── 1. Загружаем события с сервера ──────────────────────────
+  let reminders = [];
+  try {
+    const r = await fetch('/api/birthday-reminders');
+    if (!r.ok) return;
+    reminders = await r.json();
+  } catch (e) { return; }
+
+  const bellWrapper  = document.getElementById('bellWrapper');
+  const bellBtn      = document.getElementById('bellBtn');
+  const bellBadge    = document.getElementById('bellBadge');
+  const bellDropdown = document.getElementById('bellDropdown');
+  const bellList     = document.getElementById('bellList');
+  const bellEmpty    = document.getElementById('bellEmpty');
+  const bellPermRow  = document.getElementById('bellPermRow');
+  const bellPermBtn  = document.getElementById('bellPermBtn');
+
+  // ── 2. Показываем bell-иконку даже если событий нет ─────────
+  bellWrapper.style.display = '';
+
+  // ── 3. Наполняем дропдаун ───────────────────────────────────
+  if (reminders.length === 0) {
+    bellEmpty.style.display = '';
+  } else {
+    reminders.forEach(r => {
+      const item = document.createElement('div');
+      item.style.cssText =
+        'padding:10px 14px;display:flex;align-items:center;gap:10px;' +
+        'border-bottom:1px solid #f8fafc;transition:background .15s;cursor:default';
+      item.addEventListener('mouseenter', () => item.style.background = '#f8fafc');
+      item.addEventListener('mouseleave', () => item.style.background = '');
+
+      let dayLabel;
+      if      (r.days === 0) dayLabel = '<span style="color:#ef4444;font-weight:700">Сегодня! 🎉</span>';
+      else if (r.days === 1) dayLabel = '<span style="color:#f59e0b;font-weight:700">Завтра</span>';
+      else if (r.days <= 5)  dayLabel = `<span style="color:#6366f1;font-weight:600">через ${r.days} дн.</span>`;
+      else                   dayLabel = `<span style="color:#64748b">через ${r.days} дн.</span>`;
+
+      const selfMark = r.is_self ? ' <span style="font-size:.7rem;background:#e0e7ff;color:#4f46e5;border-radius:5px;padding:1px 5px">вы</span>' : '';
+
+      item.innerHTML =
+        `<span style="font-size:1.4rem;flex-shrink:0">${r.emoji}</span>` +
+        `<div style="flex:1;min-width:0">` +
+          `<div style="font-weight:600;font-size:.88rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">` +
+            `${r.name}${selfMark}</div>` +
+          `<div style="font-size:.76rem;color:#94a3b8;margin-top:1px">${r.date} · ${dayLabel}</div>` +
+        `</div>`;
+      bellList.appendChild(item);
+    });
+  }
+
+  // ── 4. Считаем непросмотренные (только для notify-дней) ─────
+  const toNotify = reminders.filter(r =>
+    r.notify && !localStorage.getItem('wh_notif_' + r.key)
+  );
+
+  if (toNotify.length > 0) {
+    bellBadge.textContent = toNotify.length;
+    bellBadge.style.display = '';
+  }
+
+  // ── 5. Показываем кнопку "Включить уведомления" в дропдауне ─
+  if ('Notification' in window && Notification.permission === 'default') {
+    bellPermRow.style.display = '';
+  }
+
+  // ── 6. Тогл дропдауна ───────────────────────────────────────
+  bellBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    const isOpen = bellDropdown.style.display === 'block';
+    bellDropdown.style.display = isOpen ? 'none' : 'block';
+    if (!isOpen) {
+      // Скрываем бэйдж при открытии
+      bellBadge.style.display = 'none';
+    }
+  });
+  document.addEventListener('click', () => { bellDropdown.style.display = 'none'; });
+  bellDropdown.addEventListener('click', e => e.stopPropagation());
+
+  // ── 7. Запрос разрешения ────────────────────────────────────
+  if (bellPermBtn) {
+    bellPermBtn.addEventListener('click', async () => {
+      const perm = await Notification.requestPermission();
+      bellPermRow.style.display = 'none';
+      if (perm === 'granted') await pushNotifications(toNotify);
+    });
+  }
+
+  // ── 8. Автоматически показываем уведомления ─────────────────
+  if (!toNotify.length) return;
+  if (!('Notification' in window)) return;
+
+  // Небольшая задержка чтобы SW успел активироваться
+  if (Notification.permission === 'granted') {
+    setTimeout(() => pushNotifications(toNotify), 1500);
+  }
+})();
+
+// ─────────────────────────────────────────────────────────────────
+//  Показ OS-уведомлений через Service Worker
+// ─────────────────────────────────────────────────────────────────
+async function pushNotifications(reminders) {
+  for (const r of reminders) {
+    const title = r.days === 0
+      ? `🎂 День рождения сегодня!`
+      : `🎁 Скоро день рождения`;
+
+    const body = r.days === 0
+      ? `Сегодня день рождения у ${r.name}! Поздравь! 🎉`
+      : r.days === 1
+        ? `Завтра день рождения у ${r.name} (${r.date})`
+        : `Через ${r.days} дней день рождения у ${r.name} (${r.date})`;
+
+    const opts = {
+      body,
+      icon:    '/static/icon-192.png',
+      badge:   '/static/icon-192.png',
+      vibrate: [300, 100, 300],
+      tag:     r.key,        // не дублирует, если уже показано
+      renotify: false,
+      data:    { url: '/' },
+    };
+
+    try {
+      if ('serviceWorker' in navigator) {
+        const reg = await navigator.serviceWorker.ready;
+        await reg.showNotification(title, opts);
+      } else {
+        new Notification(title, opts);
+      }
+    } catch (err) {
+      try { new Notification(title, opts); } catch (_) {}
+    }
+
+    // Запоминаем: сегодня уже показали
+    localStorage.setItem('wh_notif_' + r.key, '1');
+  }
+}
+</script>
+{% endif %}
 {% block scripts %}{% endblock %}
 <script>
 // ── Конфетти — запускается после page-specific scripts ────────────────────

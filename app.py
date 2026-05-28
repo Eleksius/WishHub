@@ -621,6 +621,61 @@ def delete_event(event_id):
         db.session.commit()
     return redirect(url_for('my_wishlist'))
 
+@app.route('/api/birthday-reminders')
+@login_required
+def birthday_reminders():
+    """Возвращает ближайшие события для уведомлений и bell-иконки."""
+    today = date.today()
+    notify_days = {0, 1, 5, 10}
+    reminders = []
+
+    # Дни рождения всех пользователей
+    for user in User.query.all():
+        if not user.birthday:
+            continue
+        try:
+            bday = date(today.year, user.birthday.month, user.birthday.day)
+        except ValueError:
+            continue
+        if bday < today:
+            bday = date(today.year + 1, user.birthday.month, user.birthday.day)
+        days_left = (bday - today).days
+        if 0 <= days_left <= 30:
+            reminders.append({
+                'key':    f'bday_{user.id}_{today.isoformat()}',
+                'type':   'birthday',
+                'name':   user.name,
+                'emoji':  user.emoji,
+                'days':   days_left,
+                'date':   bday.strftime('%d.%m'),
+                'is_self': user.id == current_user.id,
+                'notify': days_left in notify_days,
+            })
+
+    # Семейные события из БД
+    for ev in FamilyEvent.query.all():
+        try:
+            eday = date(today.year, ev.month, ev.day)
+        except ValueError:
+            continue
+        if eday < today:
+            eday = date(today.year + 1, ev.month, ev.day)
+        days_left = (eday - today).days
+        if 0 <= days_left <= 30:
+            reminders.append({
+                'key':    f'event_{ev.id}_{today.isoformat()}',
+                'type':   'event',
+                'name':   ev.name,
+                'emoji':  '📅',
+                'days':   days_left,
+                'date':   eday.strftime('%d.%m'),
+                'is_self': False,
+                'notify': days_left in notify_days,
+            })
+
+    reminders.sort(key=lambda x: x['days'])
+    return jsonify(reminders)
+
 @app.route('/api/fetch_preview', methods=['POST'])
 @login_required
 def fetch_preview():
