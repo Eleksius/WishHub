@@ -4,6 +4,8 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, date
 import os
+import re
+import json
 
 try:
     import requests
@@ -145,19 +147,188 @@ def get_upcoming_events():
                            'icon': ev.icon, 'type': 'custom', 'event_id': ev.id})
     return sorted(events, key=lambda x: x['days_left'])
 
-def fetch_og_image(url):
-    if not url or not HAS_REQUESTS:
-        return None
+_BASE_HEADERS = {
+    'User-Agent': (
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+        'AppleWebKit/537.36 (KHTML, like Gecko) '
+        'Chrome/124.0.0.0 Safari/537.36'
+    ),
+    'Accept-Language': 'ru-RU,ru;q=0.9,en;q=0.8',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+}
+
+def _og_image_from_soup(soup):
+    for prop, val in [('property', 'og:image'), ('name', 'og:image'),
+                      ('property', 'twitter:image'), ('name', 'twitter:image')]:
+        tag = soup.find('meta', {prop: val})
+        if tag and tag.get('content'):
+            return tag['content']
+    return None
+
+def _get_wb_basket(vol):
+    # Full WB CDN basket mapping (updated 2025)
+    thresholds = [
+        (143,'01'),(287,'02'),(431,'03'),(719,'04'),(1007,'05'),
+        (1061,'06'),(1115,'07'),(1169,'08'),(1313,'09'),(1601,'10'),
+        (1655,'11'),(1919,'12'),(2045,'13'),(2189,'14'),(2405,'15'),
+        (2621,'16'),(2837,'17'),(3053,'18'),(3269,'19'),(3485,'20'),
+        (3701,'21'),(3917,'22'),(4133,'23'),(4349,'24'),(4565,'25'),
+        (4781,'26'),(4997,'27'),(5213,'28'),(5429,'29'),(5645,'30'),
+        (5861,'31'),(6077,'32'),(6293,'33'),(6509,'34'),(6725,'35'),
+        (6941,'36'),(7157,'37'),(7373,'38'),(7589,'39'),(7805,'40'),
+    ]
+    for max_vol, basket in thresholds:
+        if vol <= max_vol:
+            return basket
+    return '41'
+
+def _wb_probe_basket(pid, vol, part, start_basket):
+    """Probe CDN to find the real basket number (HEAD requests, fast)."""
+    n = int(start_basket)
+    for delta in [0, 1, 2, 3, -1, -2, 4, 5, 6]:
+        b = n + delta
+        if b < 1 or b > 50:
+            continue
+        url = (f'https://basket-{b:02d}.wbbasket.ru'
+               f'/vol{vol}/part{part}/{pid}/images/big/1.jpg')
+        try:
+            r = requests.head(url, timeout=3, headers=_BASE_HEADERS)
+            if r.status_code == 200:
+                return url
+        except Exception:
+            pass
+    return None
+
+def _fetch_wildberries(url):
+    m = re.search(r'/catalog/(\d+)/', url)
+    if not m:
+        return {}
+    pid  = int(m.group(1))
+    vol  = pid // 100000
+    part = pid // 1000
+
+    image_url = None
+    title     = ''
+    price     = None
+
+    # ── 1. Construct image URL from known basket formula ──────────
+    basket = _get_wb_basket(vol)
+    candidate = (f'https://basket-{basket}.wbbasket.ru'
+                 f'/vol{vol}/part{part}/{pid}/images/big/1.jpg')
+    # Verify it exists; if not, probe nearby baskets
     try:
-        resp = requests.get(url, timeout=5, headers={'User-Agent': 'Mozilla/5.0 WishHub/1.0'})
-        soup = BeautifulSoup(resp.text, 'html.parser')
-        for attr in [('property', 'og:image'), ('name', 'og:image'), ('property', 'twitter:image')]:
-            tag = soup.find('meta', {attr[0]: attr[1]})
-            if tag and tag.get('content'):
-                return tag['content']
+        r = requests.head(candidate, timeout=4, headers=_BASE_HEADERS)
+        if r.status_code == 200:
+            image_url = candidate
     except Exception:
         pass
-    return None
+    if not image_url:
+        image_url = _wb_probe_basket(pid, vol, part, basket)
+
+    # ── 2. Try card API for name + price (works from Russian IPs) ──
+    for api_url in [
+        f'https://card.wb.ru/cards/v2/detail?appType=1&curr=rub&dest=-1257786&nm={pid}',
+        f'https://card.wb.ru/cards/detail?appType=1&curr=rub&dest=-1257786&nm={pid}',
+    ]:
+        try:
+            api_headers = {**_BASE_HEADERS,
+                           'Origin':  'https://www.wildberries.ru',
+                           'Referer': 'https://www.wildberries.ru/'}
+            resp = requests.get(api_url, timeout=6, headers=api_headers)
+            if resp.status_code != 200:
+                continue
+            data     = resp.json()
+            products = data.get('data', {}).get('products', [])
+            if not products:
+                continue
+            p     = products[0]
+            title = p.get('name', '')
+            for sz in p.get('sizes', []):
+                pp  = sz.get('price', {})
+                raw = pp.get('product') or pp.get('total')
+                if raw:
+                    price = round(raw / 100)
+                    break
+            # Also use API image if we don't have one yet
+            if not image_url and p.get('colors'):
+                photos = p['colors'][0].get('photos', [])
+                if photos and photos[0].get('big'):
+                    image_url = photos[0]['big']
+            break
+        except Exception:
+            continue
+
+    if image_url:
+        return {'image_url': image_url, 'title': title, 'price': price}
+    return {}
+
+def _fetch_ozon(url):
+    try:
+        r = requests.get(url, timeout=8, headers=_BASE_HEADERS)
+        soup = BeautifulSoup(r.text, 'html.parser')
+        img = _og_image_from_soup(soup)
+        if img:
+            return {'image_url': img}
+        script = soup.find('script', id='__NEXT_DATA__')
+        if script and script.string:
+            raw = script.string
+            match = re.search(r'"coverImage"\s*:\s*"([^"]+\.(?:jpg|jpeg|png|webp))"', raw)
+            if not match:
+                match = re.search(r'"image"\s*:\s*"(https://[^"]+\.(?:jpg|jpeg|png|webp))"', raw)
+            if match:
+                return {'image_url': match.group(1)}
+    except Exception:
+        pass
+    return {}
+
+def _fetch_avito(url):
+    try:
+        r = requests.get(url, timeout=8, headers=_BASE_HEADERS)
+        soup = BeautifulSoup(r.text, 'html.parser')
+        img = _og_image_from_soup(soup)
+        if img:
+            bad = ('logo', 'favicon', 'icon', 'sprite', 'placeholder',
+                   'no-photo', 'default', 'stub')
+            if not any(b in img.lower() for b in bad):
+                return {'image_url': img}
+        for tag in soup.find_all('img', src=True):
+            src = tag['src']
+            if re.search(r'avito\.st.*\.(jpg|jpeg|webp)', src, re.I):
+                return {'image_url': src}
+    except Exception:
+        pass
+    return {}
+
+def fetch_product_info(url):
+    """Вернуть dict с ключами image_url, title (опц.), price (опц.)."""
+    if not url or not HAS_REQUESTS:
+        return {}
+    url = url.strip()
+    if re.search(r'wildberries\.ru|wb\.ru', url, re.I):
+        result = _fetch_wildberries(url)
+        if result:
+            return result
+    if re.search(r'ozon\.ru', url, re.I):
+        result = _fetch_ozon(url)
+        if result:
+            return result
+    if re.search(r'avito\.ru', url, re.I):
+        result = _fetch_avito(url)
+        if result:
+            return result
+    # Generic fallback — og:image
+    try:
+        r = requests.get(url, timeout=6, headers=_BASE_HEADERS)
+        soup = BeautifulSoup(r.text, 'html.parser')
+        img = _og_image_from_soup(soup)
+        if img:
+            return {'image_url': img}
+    except Exception:
+        pass
+    return {}
+
+def fetch_og_image(url):
+    return fetch_product_info(url).get('image_url')
 
 # ──── МАРШРУТЫ ──────────────────────────────────────────────────────────────
 
@@ -199,8 +370,6 @@ def my_wishlist():
             return redirect(url_for('my_wishlist'))
         link      = request.form.get('link', '').strip()[:500]
         image_url = request.form.get('image_url', '').strip()[:500]
-        if link and not image_url:
-            image_url = fetch_og_image(link) or ''
         price = None
         price_str = request.form.get('price', '').strip().replace(',', '.').replace(' ', '')
         if price_str:
@@ -208,6 +377,11 @@ def my_wishlist():
                 price = float(price_str)
             except ValueError:
                 pass
+        if link and not image_url:
+            info = fetch_product_info(link)
+            image_url = info.get('image_url', '')
+            if price is None and info.get('price'):
+                price = info['price']
         wish = WishItem(
             title=title,
             description=request.form.get('description', '').strip()[:1000],
@@ -284,6 +458,32 @@ def create_user():
     db.session.add(new_user)
     db.session.commit()
     flash(f'{name} добавлен в семейный круг! 🎉', 'success')
+    return redirect(url_for('my_wishlist'))
+
+@app.route('/delete_user/<int:user_id>', methods=['POST'])
+@login_required
+def delete_user(user_id):
+    if not current_user.is_admin:
+        abort(403)
+    if user_id == current_user.id:
+        flash('Нельзя удалить самого себя!', 'danger')
+        return redirect(url_for('my_wishlist'))
+    user = db.session.get(User, user_id)
+    if not user:
+        abort(404)
+    name = user.name
+    # Удаляем все желания пользователя и связанные комментарии
+    for wish in WishItem.query.filter_by(user_id=user_id).all():
+        db.session.delete(wish)
+    # Снимаем брони, которые он поставил на чужие желания
+    WishItem.query.filter_by(booked_by_id=user_id).update({'booked_by_id': None})
+    # Удаляем его комментарии
+    Comment.query.filter_by(user_id=user_id).delete()
+    # Удаляем события, которые он создал
+    FamilyEvent.query.filter_by(created_by_id=user_id).delete()
+    db.session.delete(user)
+    db.session.commit()
+    flash(f'Пользователь «{name}» удалён.', 'info')
     return redirect(url_for('my_wishlist'))
 
 @app.route('/delete_wish/<int:item_id>', methods=['POST'])
@@ -368,6 +568,8 @@ def history():
 @app.route('/add_event', methods=['POST'])
 @login_required
 def add_event():
+    if not current_user.is_admin:
+        abort(403)
     name  = request.form.get('name', '').strip()[:100]
     month = request.form.get('month', '1')
     day   = request.form.get('day', '1')
@@ -396,8 +598,12 @@ def delete_event(event_id):
 @login_required
 def fetch_preview():
     url = (request.json or {}).get('url', '')
-    img = fetch_og_image(url)
-    return jsonify({'image_url': img or ''})
+    info = fetch_product_info(url)
+    return jsonify({
+        'image_url': info.get('image_url', ''),
+        'title':     info.get('title', ''),
+        'price':     info.get('price', ''),
+    })
 
 if __name__ == '__main__':
     with app.app_context():

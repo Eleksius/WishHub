@@ -82,6 +82,7 @@
     <p class="text-muted mb-2" style="font-size:.85rem">Событий пока нет</p>
     {% endfor %}
 
+    {% if current_user.is_admin %}
     <button class="btn btn-w btn-w-light w-100 mt-2" type="button" data-bs-toggle="collapse" data-bs-target="#addEventForm">
       <i class="bi bi-plus-circle me-1"></i> Добавить событие
     </button>
@@ -106,14 +107,53 @@
         </button>
       </form>
     </div>
-  </div>
+    {% endif %}
+
+  </div><!-- /Family events card -->
 
   <!-- Admin panel -->
   {% if current_user.is_admin %}
   <div class="card-w p-4" style="border:2px solid #e0e7ff">
     <h6 class="fw-700 mb-3" style="font-size:.8rem;text-transform:uppercase;letter-spacing:.5px;color:#6366f1">
-      <i class="bi bi-shield-fill me-1"></i> Добавить в семью
+      <i class="bi bi-shield-fill me-1"></i> Управление семьёй
     </h6>
+
+    <!-- Список пользователей -->
+    {% set all_users = [] %}
+    {% for u in ([current_user] + current_user.__class__.query.filter(current_user.__class__.id != current_user.id).all()) %}
+    <div class="d-flex align-items-center gap-2 mb-2 p-2 rounded-3" style="background:#f8fafc">
+      <span style="font-size:1.2rem">{{ u.emoji }}</span>
+      <div class="flex-grow-1" style="min-width:0">
+        <div style="font-size:.88rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+          {{ u.name }}
+          {% if u.is_admin %}<span class="badge ms-1" style="background:#e0e7ff;color:#4f46e5;font-size:.7rem;font-weight:600">admin</span>{% endif %}
+        </div>
+        <div class="text-muted" style="font-size:.78rem">@{{ u.username }}</div>
+      </div>
+      {% if u.id != current_user.id %}
+      <button type="button"
+              class="btn p-1 border-0 bg-transparent text-danger"
+              style="font-size:.85rem;opacity:.6;line-height:1"
+              title="Удалить пользователя"
+              onclick="confirmDeleteUser({{ u.id }}, '{{ u.name|e }}')">
+        <i class="bi bi-person-x-fill"></i>
+      </button>
+      {% else %}
+      <span style="font-size:.75rem;color:#94a3b8;padding-right:4px">вы</span>
+      {% endif %}
+    </div>
+    {% endfor %}
+
+    <!-- Форма удаления (скрытая, вызывается через JS) -->
+    <form id="deleteUserForm" method="POST" action="" class="d-none">
+    </form>
+
+    <hr style="border-color:#e0e7ff;margin:1rem 0 .75rem">
+
+    <!-- Форма добавления -->
+    <div class="fw-600 mb-2" style="font-size:.82rem;color:#6366f1">
+      <i class="bi bi-person-plus me-1"></i> Добавить участника
+    </div>
     <form method="POST" action="{{ url_for('create_user') }}">
       <div class="mb-2">
         <input type="text" name="name" class="input-w" placeholder="Имя" required style="font-size:.9rem">
@@ -293,9 +333,9 @@
               box-shadow:0 24px 64px rgba(15,23,42,.2);transform:scale(.92) translateY(12px);
               opacity:0;transition:all .25s cubic-bezier(.34,1.56,.64,1);text-align:center">
     <div style="font-size:3rem;margin-bottom:.75rem">🗑️</div>
-    <h5 class="fw-800 mb-1">Удалить желание?</h5>
+    <h5 id="deleteModalHeading" class="fw-800 mb-1">Удалить?</h5>
     <p id="deleteModalTitle" class="text-muted mb-4" style="font-size:.9rem;line-height:1.5"></p>
-    <p class="mb-4 rounded-3 py-2 px-3" style="background:#fff7ed;color:#c2410c;font-size:.82rem;font-weight:600">
+    <p id="deleteModalHint" class="mb-4 rounded-3 py-2 px-3" style="background:#fff7ed;color:#c2410c;font-size:.82rem;font-weight:600">
       <i class="bi bi-exclamation-triangle-fill me-1"></i>
       Если кто-то уже бронировал этот подарок, бронь сбросится
     </p>
@@ -303,12 +343,12 @@
       <button id="deleteCancelBtn" class="btn btn-w btn-w-light flex-grow-1" style="padding:12px">
         Отмена
       </button>
-      <form id="deleteForm" method="POST" class="flex-grow-1">
-        <button type="submit" class="btn btn-w w-100" style="padding:12px;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;box-shadow:0 4px 12px rgba(239,68,68,.3)">
-          <i class="bi bi-trash3 me-1"></i> Удалить
-        </button>
-      </form>
+      <button id="deleteConfirmBtn" class="btn btn-w flex-grow-1"
+              style="padding:12px;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;box-shadow:0 4px 12px rgba(239,68,68,.3)">
+        <i class="bi bi-trash3 me-1"></i> Удалить
+      </button>
     </div>
+    <form id="deleteForm" method="POST" class="d-none"></form>
   </div>
 </div>
 
@@ -348,6 +388,14 @@ fetchBtn.addEventListener('click', async () => {
     });
     const d = await r.json();
     if (d.image_url) { imageUrlInput.value = d.image_url; updatePreview(d.image_url); }
+    if (d.title) {
+      const titleInput = document.querySelector('input[name="title"]');
+      if (titleInput && !titleInput.value) titleInput.value = d.title;
+    }
+    if (d.price) {
+      const priceInput = document.querySelector('input[name="price"]');
+      if (priceInput && !priceInput.value) priceInput.value = d.price;
+    }
   } catch(e) {}
   fetchBtn.innerHTML = '<i class="bi bi-image me-1"></i> Найти';
 });
@@ -376,36 +424,63 @@ initRadioStyle('category', 'cat-radio-label');
 initRadioStyle('priority', 'prio-radio-label');
 
 // ── Красивый модал удаления ──────────────────────────────────────
-const modal     = document.getElementById('deleteModal');
-const backdrop  = document.getElementById('deleteBackdrop');
-const dialog    = document.getElementById('deleteDialog');
-const titleEl   = document.getElementById('deleteModalTitle');
+const modal      = document.getElementById('deleteModal');
+const backdrop   = document.getElementById('deleteBackdrop');
+const dialog     = document.getElementById('deleteDialog');
+const heading    = document.getElementById('deleteModalHeading');
+const titleEl    = document.getElementById('deleteModalTitle');
+const hintEl     = document.getElementById('deleteModalHint');
 const deleteForm = document.getElementById('deleteForm');
-const cancelBtn = document.getElementById('deleteCancelBtn');
+const cancelBtn  = document.getElementById('deleteCancelBtn');
+const confirmBtn = document.getElementById('deleteConfirmBtn');
 
-function openDeleteModal(title, action) {
-  titleEl.textContent = `«${title}»`;
-  deleteForm.action = action;
+let _pendingAction = '';
+
+function openDeleteModal({ head, body, hint, action }) {
+  heading.textContent  = head || 'Удалить?';
+  titleEl.textContent  = body || '';
+  if (hint) { hintEl.textContent = hint; hintEl.style.display = ''; }
+  else { hintEl.style.display = 'none'; }
+  _pendingAction = action;
   modal.style.display = 'flex';
-  // Двойной rAF: первый — браузер отрисовывает display:flex,
-  // второй — запускает CSS transition
   requestAnimationFrame(() => requestAnimationFrame(() => {
     backdrop.style.opacity = '1';
-    dialog.style.opacity = '1';
+    dialog.style.opacity   = '1';
     dialog.style.transform = 'scale(1) translateY(0)';
   }));
 }
 
 function closeDeleteModal() {
   backdrop.style.opacity = '0';
-  dialog.style.opacity = '0';
+  dialog.style.opacity   = '0';
   dialog.style.transform = 'scale(.92) translateY(12px)';
   setTimeout(() => { modal.style.display = 'none'; }, 250);
 }
 
-document.querySelectorAll('.btn-delete-wish').forEach(btn => {
-  btn.addEventListener('click', () => openDeleteModal(btn.dataset.title, btn.dataset.action));
+confirmBtn.addEventListener('click', () => {
+  if (_pendingAction) { deleteForm.action = _pendingAction; deleteForm.submit(); }
 });
+
+// Желания
+document.querySelectorAll('.btn-delete-wish').forEach(btn => {
+  btn.addEventListener('click', () => openDeleteModal({
+    head:   'Удалить желание?',
+    body:   `«${btn.dataset.title}»`,
+    hint:   '⚠️ Если кто-то уже бронировал этот подарок, бронь сбросится',
+    action: btn.dataset.action,
+  }));
+});
+
+// Пользователи
+function confirmDeleteUser(userId, userName) {
+  openDeleteModal({
+    head:   'Удалить пользователя?',
+    body:   `«${userName}» будет удалён вместе со всеми его желаниями.`,
+    hint:   '⚠️ Это действие необратимо',
+    action: `/delete_user/${userId}`,
+  });
+}
+
 cancelBtn.addEventListener('click', closeDeleteModal);
 backdrop.addEventListener('click', closeDeleteModal);
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDeleteModal(); });
